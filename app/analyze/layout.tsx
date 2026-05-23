@@ -6,7 +6,9 @@ import type { Metadata } from "next";
 // flagged in the v2 audit.
 
 export const metadata: Metadata = {
-  title: "Upload Your Document — KnowUrPolicy",
+  // String here is composed via the root layout's title template
+  // (`%s — KnowUrPolicy`), so just provide the page-specific portion.
+  title: "Upload Your Document",
   description:
     "Drag and drop your policy, contract, or legal document. Get a plain-English breakdown in 30 seconds. Free, private, no account needed.",
   alternates: { canonical: "/analyze" },

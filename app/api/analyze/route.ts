@@ -69,21 +69,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Permissive PDF detection — same logic as the client so we don't reject
-  // PDFs that arrive with non-standard MIME types (application/octet-stream
-  // and empty-string MIME are common with cloud-storage and email
-  // attachments). LlamaParse will catch genuine non-PDFs with a clearer
-  // extraction_failed error.
-  {
-    const filename = file.name.toLowerCase();
-    const mime = (file.type || "").toLowerCase();
-    if (!filename.endsWith(".pdf") && !mime.includes("pdf")) {
-      return NextResponse.json(
-        { error: "unsupported_type", message: "Only PDF files are supported right now." },
-        { status: 400 },
-      );
-    }
-  }
+  // No server-side MIME/extension validation — File objects coming through
+  // FormData on Vercel can have empty `name`/`type` depending on how the
+  // browser packed the multipart, and we kept rejecting real PDFs because
+  // of it. The client already does a soft check for UX; the only thing
+  // that truly knows if it's a PDF is the extractor.
 
   if (file.size > MAX_BYTES) {
     return NextResponse.json(

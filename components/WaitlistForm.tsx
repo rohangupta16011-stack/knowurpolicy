@@ -38,7 +38,7 @@ export default function WaitlistForm() {
     return (
       <div className="mt-4 flex items-center gap-2 rounded-md border border-flag-g-text/30 bg-flag-g-bg px-3 py-2.5 text-sm text-flag-g-text">
         <Check className="h-4 w-4 flex-none" />
-        You&apos;re on the list. We&apos;ll email you the moment Pro launches.
+        You&apos;re on the list. We&apos;ll email you the moment paid analyses go live.
       </div>
     );
   }

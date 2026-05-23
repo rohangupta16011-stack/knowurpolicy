@@ -15,17 +15,21 @@ import LegalDisclaimer from "@/components/LegalDisclaimer";
 import Nav from "@/components/Nav";
 import WaitlistForm from "@/components/WaitlistForm";
 import { FAQS, META_DESCRIPTION } from "@/lib/content";
+import { getPricingFromRequest, type PricingTier } from "@/lib/pricing";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 export default function LandingPage() {
+  // Detected once per request on the server (read from Vercel edge header).
+  const pricing = getPricingFromRequest();
+
   return (
     <>
-      <StructuredData />
+      <StructuredData pricing={pricing} />
       <Nav />
       <Hero />
       <Features />
       <SamplePreview />
-      <Pricing />
+      <Pricing pricing={pricing} />
       <FAQ />
       <Footer />
       <LegalDisclaimer />
@@ -36,7 +40,7 @@ export default function LandingPage() {
 // JSON-LD per SEO audit §02 — SoftwareApplication for SaaS rich snippets,
 // FAQPage for Google answer boxes. Single source of truth for the FAQ
 // content (lib/content.ts) so what users see matches what Google indexes.
-function StructuredData() {
+function StructuredData({ pricing }: { pricing: PricingTier }) {
   const softwareApp = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -51,12 +55,14 @@ function StructuredData() {
         name: "Free",
         price: "0",
         priceCurrency: "USD",
+        description: "1 analysis per email, no payment required",
       },
       {
         "@type": "Offer",
-        name: "Pro",
-        price: "9.99",
-        priceCurrency: "USD",
+        name: "Single document",
+        price: String(pricing.perDoc),
+        priceCurrency: pricing.currency,
+        description: "Per-document analysis after the free first one",
       },
     ],
   };
@@ -331,7 +337,7 @@ function ClauseCard({
   );
 }
 
-function Pricing() {
+function Pricing({ pricing }: { pricing: PricingTier }) {
   return (
     <section id="pricing" className="mx-auto max-w-3xl px-6 pb-20">
       <div className="mb-10 text-center">
@@ -339,8 +345,11 @@ function Pricing() {
           Pricing
         </div>
         <h2 className="mt-3 font-display text-3xl font-bold text-navy">
-          Free to try. Pro for unlimited.
+          One free analysis. Then pay per document.
         </h2>
+        <p className="mt-3 text-sm text-navy-mid">
+          No subscription. No commitment. Pay only when you upload another.
+        </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -348,7 +357,10 @@ function Pricing() {
         <div className="rounded-lg border border-ink-12 bg-white p-6">
           <div className="font-display text-xl font-bold text-navy">Free</div>
           <div className="mt-2 font-display text-3xl font-bold text-navy">
-            $0<span className="ml-1 text-sm font-medium text-navy-mid">forever</span>
+            {pricing.symbol}0
+            <span className="ml-1 text-sm font-medium text-navy-mid">
+              once, no card
+            </span>
           </div>
           <ul className="mt-5 space-y-2 text-sm text-navy">
             <FeatureItem>1 full document analysis</FeatureItem>
@@ -356,25 +368,37 @@ function Pricing() {
             <FeatureItem>All five clause sections</FeatureItem>
           </ul>
           <Link href="/analyze" className="btn-secondary mt-6 w-full">
-            Get started
+            Try free
           </Link>
         </div>
 
-        {/* Pro — featured (amber border per design doc) */}
+        {/* Per-document — featured */}
         <div className="relative rounded-lg border-2 border-amber bg-white p-6">
           <span className="absolute -top-2.5 left-6 rounded-full bg-amber px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-            Most popular
+            Pay per document
           </span>
-          <div className="font-display text-xl font-bold text-navy">Pro</div>
-          <div className="mt-2 font-display text-3xl font-bold text-navy">
-            $9.99<span className="ml-1 text-sm font-medium text-navy-mid">/month</span>
+          <div className="font-display text-xl font-bold text-navy">
+            Single document
           </div>
+          <div className="mt-2 font-display text-3xl font-bold text-navy">
+            {pricing.perDocDisplay}
+            <span className="ml-1 text-sm font-medium text-navy-mid">
+              per analysis
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-navy-mid">
+            Pricing for your region · {pricing.currency}
+          </p>
           <ul className="mt-5 space-y-2 text-sm text-navy">
-            <FeatureItem>Unlimited document analyses</FeatureItem>
-            <FeatureItem>Unlimited Q&amp;A</FeatureItem>
-            <FeatureItem>Export analysis as PDF</FeatureItem>
-            <FeatureItem>Priority processing</FeatureItem>
+            <FeatureItem>Each document analysed in 30 seconds</FeatureItem>
+            <FeatureItem>Unlimited Q&amp;A on that document</FeatureItem>
+            <FeatureItem>Export the analysis as a PDF report</FeatureItem>
+            <FeatureItem>No subscription · pay only what you use</FeatureItem>
           </ul>
+          <p className="mt-5 text-xs font-medium text-navy-mid">
+            Paid analyses launch this week — drop your email and we&apos;ll
+            notify you the moment they&apos;re live.
+          </p>
           <WaitlistForm />
         </div>
       </div>

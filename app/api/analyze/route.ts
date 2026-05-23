@@ -6,6 +6,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10MB per PRD §6.2
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: NextRequest) {
   const form = await req.formData().catch(() => null);
@@ -23,6 +24,23 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
+
+  // Email gate — required per the freemium gate (PRD §6.5).
+  const emailRaw = form.get("email");
+  const email = typeof emailRaw === "string" ? emailRaw.trim().toLowerCase() : "";
+  if (!email || !EMAIL_RE.test(email) || email.length > 254) {
+    return NextResponse.json(
+      {
+        error: "missing_email",
+        message: "Please enter a valid email address to continue.",
+      },
+      { status: 400 },
+    );
+  }
+  // TODO: enforce freemium gate against Supabase (`email_usage` table —
+  // first analysis free, charge after via Razorpay). For now we log so the
+  // captured emails aren't silently dropped.
+  console.log(`[analyze] ${email} @ ${new Date().toISOString()} (${file.name}, ${file.size}B)`);
 
   if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
     return NextResponse.json(

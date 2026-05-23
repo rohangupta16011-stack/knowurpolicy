@@ -47,8 +47,14 @@ const PROCESSING_STAGES = [
   "Building your plain English summary",
 ];
 
+// Minimal email validator — server is authoritative, this just blocks the
+// most obvious typos before round-tripping.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function AnalyzePage() {
   const [stage, setStage] = useState<Stage>({ kind: "idle" });
+  // Email survives across re-analyses (user enters once, keeps going).
+  const [email, setEmail] = useState("");
 
   function pickFile(file: File | null) {
     if (!file) return;
@@ -63,8 +69,11 @@ export default function AnalyzePage() {
     setStage({ kind: "selected", file });
   }
 
+  const emailValid = EMAIL_RE.test(email.trim());
+
   async function analyse() {
     if (stage.kind !== "selected") return;
+    if (!emailValid) return;
     const file = stage.file;
 
     setStage({ kind: "processing", stageIndex: 0 });
@@ -79,6 +88,7 @@ export default function AnalyzePage() {
     try {
       const form = new FormData();
       form.append("file", file);
+      form.append("email", email.trim().toLowerCase());
       const res = await fetch("/api/analyze", { method: "POST", body: form });
       const data = (await res.json()) as
         | { analysis: AnalysisResult; documentText: string }
@@ -119,6 +129,9 @@ export default function AnalyzePage() {
         {stage.kind === "idle" || stage.kind === "selected" || stage.kind === "error" ? (
           <UploadView
             stage={stage}
+            email={email}
+            emailValid={emailValid}
+            onEmailChange={setEmail}
             onPick={pickFile}
             onAnalyse={analyse}
             onReset={() => setStage({ kind: "idle" })}
@@ -193,18 +206,27 @@ function StepIndicator({ current }: { current: 1 | 2 | 3 }) {
 
 function UploadView({
   stage,
+  email,
+  emailValid,
+  onEmailChange,
   onPick,
   onAnalyse,
   onReset,
 }: {
   stage: Stage;
+  email: string;
+  emailValid: boolean;
+  onEmailChange: (v: string) => void;
   onPick: (f: File | null) => void;
   onAnalyse: () => void;
   onReset: () => void;
 }) {
   const [isDragging, setIsDragging] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
   const selected = stage.kind === "selected" ? stage.file : null;
   const error = stage.kind === "error" ? stage.message : null;
+  const emailHasError = emailTouched && email.length > 0 && !emailValid;
+  const canSubmit = emailValid && selected !== null;
 
   return (
     <section>
@@ -217,6 +239,40 @@ function UploadView({
           service, NDA, EULA — anything binding you didn&apos;t write.
         </p>
       </header>
+
+      {/* Email gate — required before analysis. We collect it so users can
+          come back to their analyses and so we can enforce the free-first
+          freemium gate per PRD §6.5. */}
+      <div className="mt-6">
+        <label
+          htmlFor="email"
+          className="block text-xs font-semibold uppercase tracking-[0.08em] text-navy"
+        >
+          Your email
+        </label>
+        <input
+          id="email"
+          type="email"
+          required
+          autoComplete="email"
+          placeholder="you@company.com"
+          value={email}
+          onChange={(e) => onEmailChange(e.target.value)}
+          onBlur={() => setEmailTouched(true)}
+          aria-invalid={emailHasError}
+          aria-describedby="email-help"
+          className={`mt-1.5 w-full rounded-md border bg-white px-3 py-2.5 text-sm text-navy placeholder:text-navy-mid focus:outline-none focus:ring-2 ${
+            emailHasError
+              ? "border-flag-r-text focus:border-flag-r-text focus:ring-flag-r-text/30"
+              : "border-ink-22 focus:border-amber focus:ring-amber/30"
+          }`}
+        />
+        <p id="email-help" className="mt-1.5 text-xs text-navy-mid">
+          {emailHasError
+            ? "Please enter a valid email address."
+            : "We use this to give you 1 free analysis. No spam."}
+        </p>
+      </div>
 
       <label
         htmlFor="pdf"
@@ -310,13 +366,19 @@ function UploadView({
       <div className="mt-6 space-y-2">
         <button
           type="button"
-          disabled={!selected}
+          disabled={!canSubmit}
           onClick={onAnalyse}
           className="btn-primary w-full text-base"
         >
-          {selected ? "Analyse this document →" : "Select a file to continue"}
+          {!emailValid && !selected
+            ? "Enter email and select a file"
+            : !emailValid
+              ? "Enter your email to continue"
+              : !selected
+                ? "Select a file to continue"
+                : "Analyse this document →"}
         </button>
-        {selected && (
+        {canSubmit && (
           <p className="text-center text-xs text-navy-mid">Takes ~30 seconds</p>
         )}
       </div>

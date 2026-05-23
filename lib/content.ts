@@ -19,6 +19,14 @@ export const FAQS = [
     q: "How accurate is the analysis?",
     a: "Every clause is grounded in your document — we do not fabricate. Anything red-flagged should be reviewed with a professional before you act.",
   },
+  {
+    q: "What happens after my free analysis?",
+    a: "Your first analysis is free, no card required — we just need your email so you can find your analyses again. After that, additional analyses are paid per document. No subscription, no commitment — you only pay when you upload another.",
+  },
+  {
+    q: "Why does the price differ by region?",
+    a: "We charge in your local currency at a tier suited to your market — Indian users pay in ₹, customers in the US/UK/EU/AU pay in USD, and emerging markets get a discounted USD rate. This keeps the product accessible regardless of where you live.",
+  },
 ];
 
 export const META_TITLE =

@@ -217,11 +217,11 @@ function UploadView({
     <section>
       <header>
         <h1 className="font-display text-3xl font-bold text-navy">
-          Upload your document
+          Upload any document
         </h1>
         <p className="mt-1.5 text-sm text-navy-mid">
-          Insurance policy, lease agreement, freelance contract, or any legal
-          document.
+          Insurance policy, lease, employment or freelance contract, terms of
+          service, NDA, EULA — anything binding you didn&apos;t write.
         </p>
       </header>
 

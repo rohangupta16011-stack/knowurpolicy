@@ -13,7 +13,7 @@ export const FAQS = [
   },
   {
     q: "What documents work?",
-    a: "Insurance policies (health, home, auto, renters) for the MVP. Freelance contracts and lease agreements are next.",
+    a: "Any policy, contract, or legal document: insurance policies, freelance and employment contracts, lease and rental agreements, terms of service, NDAs, EULAs, loan agreements, and more. If it's a PDF with selectable text, we can read it.",
   },
   {
     q: "How accurate is the analysis?",
@@ -22,18 +22,21 @@ export const FAQS = [
 ];
 
 export const META_TITLE =
-  "KnowUrPolicy — AI Insurance Policy Analyser | Plain English in 30 Seconds";
+  "KnowUrPolicy — AI Policy, Contract & Legal Document Analyser | Plain English in 30 Seconds";
 
 export const META_DESCRIPTION =
-  "Upload your insurance policy or contract and get a plain-English breakdown of what's covered, what's excluded, and what puts you at risk — in 30 seconds.";
+  "Upload any policy, contract, or legal document and get a plain-English breakdown of what's covered, what's excluded, and what puts you at risk — in 30 seconds.";
 
 export const META_KEYWORDS = [
-  "AI insurance policy analyser",
-  "explain insurance policy plain english",
-  "insurance policy exclusions",
+  "AI contract analyser",
+  "AI policy analyser",
+  "explain legal document plain english",
+  "review contract with AI",
   "upload contract for AI review",
-  "legal document plain english",
+  "lease agreement plain english",
+  "freelance contract review AI",
+  "terms of service explainer",
   "AI document simplification",
-  "understand insurance policy",
-  "how to read insurance policy",
+  "AI insurance policy analyser",
+  "understand any legal document",
 ];

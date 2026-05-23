@@ -121,15 +121,15 @@ function Hero() {
         {/* Emphasis on 'before it's too late' (the anxiety trigger),
             not 'act' (the weakest word) — per UX audit P1. */}
         <h1 className="mt-5 font-display text-4xl font-bold leading-[1.1] text-navy sm:text-5xl">
-          Understand your policy
+          Understand what you&apos;re signing
           <br />
           <em className="not-italic text-amber">before it&apos;s too late.</em>
         </h1>
 
         <p className="mx-auto mt-6 max-w-xl text-base text-navy-mid">
-          Upload any insurance policy, contract, or legal document. Get a
-          plain-English breakdown of what&apos;s covered, what&apos;s not, and
-          what puts you at risk — in 30 seconds.
+          Upload any policy, contract, lease, terms of service, or legal
+          document. Get a plain-English breakdown of what&apos;s included,
+          what&apos;s not, and what puts you at risk — in 30 seconds.
         </p>
 
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -196,14 +196,13 @@ function Features() {
         <div className="text-xs font-semibold uppercase tracking-[0.18em] text-amber">
           How it works
         </div>
-        {/* Keyword-rich H2 for SEO — primary phrase "AI insurance policy analyser" */}
         <h2 className="mt-3 font-display text-3xl font-bold text-navy">
-          An AI insurance policy analyser built for everyday people.
+          An AI document analyser built for everyday people.
         </h2>
         <p className="mt-3 text-base text-navy-mid">
-          Upload any insurance policy or contract as a PDF. KnowUrPolicy reads
-          every clause, translates the legalese to plain English, and flags
-          what you actually need to read.
+          Upload any policy, contract, lease, terms-of-service or other legal
+          document as a PDF. KnowUrPolicy reads every clause, translates the
+          legalese to plain English, and flags what you actually need to read.
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
@@ -235,8 +234,8 @@ function SamplePreview() {
           What you get back.
         </h2>
         <p className="mt-2 text-sm text-navy-mid">
-          Below is a real-shape analysis of a home insurance policy. Your upload
-          returns the same structure, personalised to your document.
+          Example below uses a home insurance policy. The same structure works
+          for contracts, leases, T&amp;Cs, NDAs — anything you sign.
         </p>
       </div>
 

@@ -30,19 +30,20 @@ export async function extractPdfText(
     const text = await fetchResult(jobId, apiKey);
 
     if (text.length < NO_TEXT_LAYER_THRESHOLD) {
+      console.warn(`[extract] no_text_layer: ${filename} (${text.length} chars)`);
       return { ok: false, reason: "no_text_layer" };
     }
     if (text.length < MIN_USEFUL_CHARS) {
+      console.warn(`[extract] too_short: ${filename} (${text.length} chars)`);
       return { ok: false, reason: "too_short" };
     }
 
+    console.log(`[extract] ok: ${filename} (${text.length} chars)`);
     return { ok: true, text };
   } catch (e) {
-    return {
-      ok: false,
-      reason: "extraction_failed",
-      detail: e instanceof Error ? e.message : String(e),
-    };
+    const detail = e instanceof Error ? e.message : String(e);
+    console.error(`[extract] FAILED: ${filename} — ${detail}`);
+    return { ok: false, reason: "extraction_failed", detail };
   }
 }
 

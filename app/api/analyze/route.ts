@@ -58,6 +58,8 @@ export async function POST(req: NextRequest) {
     const analysis = await analyseDocument(extracted.text);
     return NextResponse.json({ analysis });
   } catch (e) {
+    const detail = e instanceof Error ? e.message : String(e);
+    console.error(`[analyze] model failed for ${file.name}: ${detail}`);
     return NextResponse.json(
       {
         error: "model_failed",

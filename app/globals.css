@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+@layer base {
+  /* Make headings use Playfair Display by default so authoring stays clean */
+  h1,
+  h2 {
+    font-family: var(--font-display), Georgia, serif;
+  }
+}
+
+@layer components {
+  /* Brand button — amber primary per design doc §04 */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-md bg-amber px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber disabled:cursor-not-allowed disabled:bg-ink-12 disabled:text-navy-mid disabled:opacity-60;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border-[1.5px] border-navy bg-transparent px-5 py-2 text-sm font-semibold text-navy transition hover:bg-navy hover:text-cream;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center gap-1.5 text-sm font-medium text-navy-mid transition hover:text-navy;
+  }
+
+  /* Risk flag badges */
+  .flag {
+    @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold;
+  }
+  .flag-g {
+    @apply border-[#0A6640] bg-flag-g-bg text-flag-g-text;
+  }
+  .flag-y {
+    @apply border-flag-y-border bg-flag-y-bg text-flag-y-text;
+  }
+  .flag-r {
+    @apply border-[#A01515] bg-flag-r-bg text-flag-r-text;
+  }
+}
+
+@layer utilities {
+  .stripe {
+    position: relative;
+  }
+  .stripe::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+  }
+}

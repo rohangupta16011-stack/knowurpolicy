@@ -1,0 +1,753 @@
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/playfair-display@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/playfair-display@5/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/plus-jakarta-sans@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/plus-jakarta-sans@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/plus-jakarta-sans@5/600.css">
+<h2 class="sr-only">KnowUrPolicy Design Document — brand identity, color system, typography, component library, and screen mockups</h2>
+<style>
+:root {
+  --kp-navy: #0A2540;
+  --kp-navy-2: #15406B;
+  --kp-navy-3: #1E5490;
+  --kp-amber: #C96A00;
+  --kp-amber-2: #E07B00;
+  --kp-amber-bg: #FEF3E2;
+  --kp-cream: #FAF8F5;
+  --kp-white: #FFFFFF;
+  --kp-border: rgba(10,37,64,0.12);
+  --kp-border-2: rgba(10,37,64,0.22);
+  --kp-g-text: #0A6640;
+  --kp-g-bg: #E8F7EF;
+  --kp-g-border: #0A6640;
+  --kp-y-text: #7A5500;
+  --kp-y-bg: #FFF8DC;
+  --kp-y-border: #B07800;
+  --kp-r-text: #A01515;
+  --kp-r-bg: #FEF0F0;
+  --kp-r-border: #A01515;
+  --ff-d: 'Playfair Display', Georgia, serif;
+  --ff-b: 'Plus Jakarta Sans', var(--font-sans);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+.ds-wrap{font-family:var(--ff-b);color:var(--kp-navy);padding:0 0 2rem}
+.ds-cover{border:1px solid var(--kp-border);border-radius:var(--border-radius-lg);padding:2.5rem 2rem 2rem;margin-bottom:2rem;background:var(--color-background-primary)}
+.ds-cover-top{display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem}
+.ds-logo-mark svg{display:block}
+.ds-wordmark{font-family:var(--ff-d);font-size:28px;font-weight:700;color:var(--kp-navy);letter-spacing:-0.5px;line-height:1}
+.ds-wordmark span{color:var(--kp-amber)}
+.ds-tagline{font-size:13px;color:var(--kp-navy-2);margin-top:3px;font-weight:500;letter-spacing:0.3px}
+.ds-cover-meta{display:flex;gap:1rem;flex-wrap:wrap}
+.ds-meta-pill{background:var(--kp-amber-bg);color:var(--kp-amber);font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;letter-spacing:0.3px}
+.ds-section{margin-bottom:2rem}
+.ds-sec-header{display:flex;align-items:baseline;gap:0.75rem;margin-bottom:1.25rem;padding-bottom:0.5rem;border-bottom:1.5px solid var(--kp-navy)}
+.ds-sec-num{font-size:11px;font-weight:600;color:var(--kp-amber);letter-spacing:1px;text-transform:uppercase}
+.ds-sec-title{font-family:var(--ff-d);font-size:20px;font-weight:700;color:var(--kp-navy)}
+.ds-card{background:var(--color-background-primary);border:0.5px solid var(--kp-border);border-radius:var(--border-radius-lg);padding:1.25rem}
+.ds-card+.ds-card{margin-top:0.75rem}
+.ds-row{display:flex;gap:0.75rem;flex-wrap:wrap}
+.ds-row+.ds-row{margin-top:0.75rem}
+.ds-label{font-size:11px;font-weight:600;color:var(--kp-navy-2);letter-spacing:0.6px;text-transform:uppercase;margin-bottom:0.5rem}
+.swatch-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:0.5rem}
+.swatch{border-radius:var(--border-radius-md);overflow:hidden;border:0.5px solid var(--kp-border)}
+.swatch-color{height:52px}
+.swatch-info{padding:6px 8px;background:var(--color-background-primary)}
+.swatch-name{font-size:11px;font-weight:600;color:var(--kp-navy)}
+.swatch-hex{font-size:10px;color:var(--kp-navy-2);font-family:var(--font-mono)}
+.swatch-use{font-size:10px;color:var(--kp-navy-2);margin-top:1px}
+.type-row{padding:0.5rem 0;border-bottom:0.5px solid var(--kp-border)}
+.type-row:last-child{border-bottom:none}
+.type-meta{font-size:11px;color:var(--kp-navy-2);font-family:var(--font-mono);margin-bottom:2px}
+.t-h1{font-family:var(--ff-d);font-size:36px;font-weight:700;color:var(--kp-navy);line-height:1.15}
+.t-h2{font-family:var(--ff-d);font-size:26px;font-weight:700;color:var(--kp-navy);line-height:1.2}
+.t-h3{font-family:var(--ff-b);font-size:18px;font-weight:600;color:var(--kp-navy);line-height:1.3}
+.t-h4{font-family:var(--ff-b);font-size:15px;font-weight:600;color:var(--kp-navy);line-height:1.4}
+.t-body{font-family:var(--ff-b);font-size:15px;font-weight:400;color:var(--kp-navy);line-height:1.65}
+.t-small{font-family:var(--ff-b);font-size:13px;font-weight:400;color:var(--kp-navy-2);line-height:1.5}
+.t-label{font-family:var(--ff-b);font-size:11px;font-weight:600;color:var(--kp-navy-2);letter-spacing:0.7px;text-transform:uppercase}
+.comp-row{display:flex;gap:0.625rem;align-items:center;flex-wrap:wrap;padding:0.875rem;background:var(--kp-cream);border-radius:var(--border-radius-md)}
+.btn-p{background:var(--kp-amber);color:#fff;font-family:var(--ff-b);font-size:13px;font-weight:600;padding:9px 20px;border:none;border-radius:var(--border-radius-md);cursor:pointer;letter-spacing:0.2px}
+.btn-s{background:transparent;color:var(--kp-navy);font-family:var(--ff-b);font-size:13px;font-weight:600;padding:8px 20px;border:1.5px solid var(--kp-navy);border-radius:var(--border-radius-md);cursor:pointer}
+.btn-g{background:transparent;color:var(--kp-navy-2);font-family:var(--ff-b);font-size:13px;font-weight:500;padding:8px 16px;border:none;cursor:pointer}
+.btn-sm{background:var(--kp-amber);color:#fff;font-family:var(--ff-b);font-size:11px;font-weight:600;padding:6px 14px;border:none;border-radius:var(--border-radius-md);cursor:pointer}
+.btn-dis{background:var(--kp-border);color:var(--kp-navy-2);font-family:var(--ff-b);font-size:13px;font-weight:600;padding:8px 20px;border:none;border-radius:var(--border-radius-md);cursor:not-allowed;opacity:0.5}
+.flag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;letter-spacing:0.3px}
+.flag-g{background:var(--kp-g-bg);color:var(--kp-g-text);border:1px solid var(--kp-g-border)}
+.flag-y{background:var(--kp-y-bg);color:var(--kp-y-text);border:1px solid var(--kp-y-border)}
+.flag-r{background:var(--kp-r-bg);color:var(--kp-r-text);border:1px solid var(--kp-r-border)}
+.clause-card{background:var(--color-background-primary);border:0.5px solid var(--kp-border);border-radius:var(--border-radius-lg);overflow:hidden}
+.clause-card-inner{display:flex;gap:0;align-items:stretch}
+.clause-stripe{width:4px;flex-shrink:0}
+.clause-body{padding:0.875rem 1rem;flex:1}
+.clause-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
+.clause-title{font-size:13px;font-weight:600;color:var(--kp-navy)}
+.clause-text{font-size:12px;color:var(--kp-navy-2);line-height:1.55}
+.score-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600}
+.score-easy{background:#E8F7EF;color:#0A6640}
+.score-mod{background:#FFF8DC;color:#7A5500}
+.score-cx{background:#FEF0F0;color:#A01515}
+.inp-wrap{position:relative;display:inline-flex;flex-direction:column;gap:4px}
+.inp-label{font-size:11px;font-weight:600;color:var(--kp-navy);letter-spacing:0.3px}
+.inp{font-family:var(--ff-b);font-size:13px;color:var(--kp-navy);border:1px solid var(--kp-border-2);border-radius:var(--border-radius-md);padding:8px 12px;background:var(--color-background-primary);outline:none;width:200px}
+.upload-zone{border:2px dashed var(--kp-border-2);border-radius:var(--border-radius-lg);padding:2rem;text-align:center;background:var(--kp-cream);cursor:pointer}
+.upload-icon{font-size:28px;color:var(--kp-navy-2);display:block;margin:0 auto 0.5rem}
+.upload-text{font-size:13px;font-weight:600;color:var(--kp-navy)}
+.upload-sub{font-size:11px;color:var(--kp-navy-2);margin-top:3px}
+.screen-wrap{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:1rem}
+.screen{background:var(--kp-cream);border:0.5px solid var(--kp-border);border-radius:var(--border-radius-lg);overflow:hidden}
+.nav-bar{background:var(--color-background-primary);border-bottom:1px solid var(--kp-border);padding:0.75rem 1.25rem;display:flex;justify-content:space-between;align-items:center}
+.nav-left{display:flex;align-items:center;gap:0.5rem}
+.nav-logo-text{font-family:var(--ff-d);font-size:16px;font-weight:700;color:var(--kp-navy)}
+.nav-logo-text span{color:var(--kp-amber)}
+.nav-links{display:flex;gap:1.25rem;align-items:center}
+.nav-link{font-size:12px;font-weight:500;color:var(--kp-navy-2)}
+.screen-hero{padding:2.5rem 2rem 2rem;text-align:center}
+.hero-eyebrow{font-size:11px;font-weight:600;color:var(--kp-amber);letter-spacing:1px;text-transform:uppercase;margin-bottom:0.75rem}
+.hero-h{font-family:var(--ff-d);font-size:32px;font-weight:700;color:var(--kp-navy);line-height:1.2;margin-bottom:0.75rem}
+.hero-h em{color:var(--kp-amber);font-style:normal}
+.hero-sub{font-size:13px;color:var(--kp-navy-2);line-height:1.65;max-width:480px;margin:0 auto 1.5rem}
+.hero-cta-row{display:flex;gap:0.75rem;justify-content:center;align-items:center;margin-bottom:1.5rem}
+.trust-bar{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+.trust-item{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:500;color:var(--kp-navy-2)}
+.trust-icon{font-size:13px;color:var(--kp-g-text)}
+.features-row{display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;padding:0 1.5rem 1.5rem}
+.feat-card{background:var(--color-background-primary);border:0.5px solid var(--kp-border);border-radius:var(--border-radius-lg);padding:1rem}
+.feat-icon{font-size:20px;margin-bottom:0.5rem;color:var(--kp-amber)}
+.feat-title{font-size:12px;font-weight:600;color:var(--kp-navy);margin-bottom:3px}
+.feat-desc{font-size:11px;color:var(--kp-navy-2);line-height:1.5}
+.screen-upload{padding:1.5rem 2rem}
+.upload-head{font-family:var(--ff-d);font-size:18px;font-weight:700;color:var(--kp-navy);margin-bottom:4px}
+.upload-sub-head{font-size:12px;color:var(--kp-navy-2);margin-bottom:1.25rem}
+.privacy-note{display:flex;align-items:flex-start;gap:6px;background:var(--kp-g-bg);border:0.5px solid var(--kp-g-border);border-radius:var(--border-radius-md);padding:0.75rem;margin-top:0.75rem;margin-bottom:1rem}
+.privacy-note-text{font-size:11px;color:var(--kp-g-text);line-height:1.5}
+.analysis-header{background:var(--color-background-primary);border-bottom:1px solid var(--kp-border);padding:0.75rem 1rem;display:flex;justify-content:space-between;align-items:center;gap:0.5rem}
+.analysis-filename{font-size:12px;font-weight:600;color:var(--kp-navy);display:flex;align-items:center;gap:5px}
+.analysis-actions{display:flex;gap:0.5rem;align-items:center}
+.analysis-body{padding:1rem}
+.summary-card{background:var(--color-background-primary);border:0.5px solid var(--kp-border);border-radius:var(--border-radius-lg);padding:1rem;margin-bottom:0.75rem}
+.summary-label{font-size:11px;font-weight:600;color:var(--kp-amber);letter-spacing:0.7px;text-transform:uppercase;margin-bottom:0.4rem}
+.summary-text{font-size:12px;color:var(--kp-navy);line-height:1.6}
+.section-accordion{margin-bottom:0.5rem;border:0.5px solid var(--kp-border);border-radius:var(--border-radius-lg);overflow:hidden}
+.acc-header{background:var(--color-background-primary);padding:0.7rem 1rem;display:flex;justify-content:space-between;align-items:center}
+.acc-title{font-size:13px;font-weight:600;color:var(--kp-navy);display:flex;align-items:center;gap:6px}
+.acc-count{font-size:11px;background:var(--kp-amber-bg);color:var(--kp-amber);padding:2px 8px;border-radius:12px;font-weight:600}
+.acc-body{padding:0.75rem;background:var(--kp-cream);display:flex;flex-direction:column;gap:0.4rem}
+.disclaimer-bar{background:var(--kp-amber-bg);border-top:1px solid rgba(201,106,0,0.2);padding:0.625rem 1rem;display:flex;align-items:flex-start;gap:0.5rem}
+.disclaimer-text{font-size:10px;color:var(--kp-amber);line-height:1.5}
+.pricing-row{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;padding:0 1.25rem 1.25rem}
+.pricing-card{border:0.5px solid var(--kp-border);border-radius:var(--border-radius-lg);padding:1rem;background:var(--color-background-primary)}
+.pricing-card.featured{border:2px solid var(--kp-amber)}
+.pricing-tag{font-size:11px;font-weight:600;color:var(--kp-amber);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:4px}
+.pricing-tier{font-family:var(--ff-d);font-size:18px;font-weight:700;color:var(--kp-navy)}
+.pricing-price{font-size:24px;font-weight:700;color:var(--kp-navy);margin:0.25rem 0;font-family:var(--ff-d)}
+.pricing-price span{font-size:13px;font-weight:400;color:var(--kp-navy-2);font-family:var(--ff-b)}
+.pricing-features{list-style:none;margin:0.75rem 0;display:flex;flex-direction:column;gap:4px}
+.pricing-features li{font-size:11px;color:var(--kp-navy);display:flex;align-items:center;gap:5px}
+.pricing-features li i{color:var(--kp-g-text);font-size:13px}
+.token-block{background:var(--kp-navy);border-radius:var(--border-radius-lg);padding:1.25rem;font-family:var(--font-mono);font-size:11px;line-height:1.9;overflow-x:auto}
+.tok-comment{color:#64748b}
+.tok-var{color:#93c5fd}
+.tok-val{color:#86efac}
+.tok-val-amber{color:#fcd34d}
+.tok-val-sem{color:#f9a8d4}
+.mobile-hint{display:flex;gap:0.75rem;flex-wrap:wrap}
+.mobile-screen{width:200px;flex-shrink:0;background:var(--color-background-secondary);border-radius:12px;padding:0.75rem;border:0.5px solid var(--kp-border)}
+.mob-title{font-size:10px;font-weight:600;color:var(--kp-navy-2);margin-bottom:0.5rem;text-align:center;letter-spacing:0.5px;text-transform:uppercase}
+.mob-card{background:var(--color-background-primary);border-radius:var(--border-radius-md);border:0.5px solid var(--kp-border);overflow:hidden;margin-bottom:0.4rem}
+.mob-acc-h{background:var(--color-background-primary);padding:0.5rem 0.625rem;display:flex;justify-content:space-between;align-items:center;border-bottom:0.5px solid var(--kp-border)}
+.mob-acc-t{font-size:10px;font-weight:600;color:var(--kp-navy)}
+.mob-clause{padding:0.5rem;background:var(--kp-cream);display:flex;gap:0;align-items:stretch}
+.mob-stripe{width:3px;border-radius:2px;flex-shrink:0;margin-right:6px}
+.mob-ct{font-size:9px;color:var(--kp-navy);font-weight:600;margin-bottom:2px}
+.mob-cb{font-size:9px;color:var(--kp-navy-2);line-height:1.4}
+.brand-voice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem}
+.bv-card{border:0.5px solid var(--kp-border);border-radius:var(--border-radius-lg);padding:0.875rem;background:var(--color-background-primary)}
+.bv-icon{font-size:20px;color:var(--kp-amber);margin-bottom:0.5rem}
+.bv-title{font-size:12px;font-weight:600;color:var(--kp-navy);margin-bottom:4px}
+.bv-yes{font-size:11px;color:var(--kp-g-text);margin-bottom:2px}
+.bv-no{font-size:11px;color:var(--kp-r-text)}
+.logo-var-row{display:flex;gap:1rem;align-items:center;flex-wrap:wrap;margin-top:0.75rem}
+.logo-var{border:0.5px solid var(--kp-border);border-radius:var(--border-radius-md);padding:0.75rem 1rem;display:flex;align-items:center;gap:0.5rem;background:var(--color-background-primary)}
+.logo-var.dark-bg{background:var(--kp-navy)}
+.logo-var.amber-bg{background:var(--kp-amber)}
+.sp-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:0.5rem}
+.sp-item{text-align:center}
+.sp-block{margin:0 auto;background:var(--kp-navy);border-radius:2px}
+.sp-val{font-size:10px;color:var(--kp-navy-2);margin-top:4px;font-family:var(--font-mono)}
+</style>
+
+<div class="ds-wrap">
+
+<div class="ds-cover">
+  <div class="ds-cover-top">
+    <div class="ds-logo-mark">
+      <svg viewBox="0 0 36 44" width="36" height="44" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 0 H24 L36 12 V44 H2 Z" rx="2" fill="#0A2540"/>
+        <path d="M24 0 L36 12 H24 Z" fill="#15406B"/>
+        <rect x="8" y="18" width="20" height="2" rx="1" fill="#FAF8F5" opacity="0.85"/>
+        <rect x="8" y="24" width="20" height="2" rx="1" fill="#FAF8F5" opacity="0.85"/>
+        <rect x="8" y="30" width="14" height="2" rx="1" fill="#C96A00"/>
+      </svg>
+    </div>
+    <div>
+      <div class="ds-wordmark">Know<span>Ur</span>Policy</div>
+      <div class="ds-tagline">Understand before you sign.</div>
+    </div>
+  </div>
+  <div class="ds-cover-meta">
+    <span class="ds-meta-pill">Design Document v1.0</span>
+    <span class="ds-meta-pill">US &amp; EU Markets</span>
+    <span class="ds-meta-pill">MVP Scope</span>
+  </div>
+</div>
+
+<div class="ds-section">
+  <div class="ds-sec-header">
+    <span class="ds-sec-num">01</span>
+    <span class="ds-sec-title">Brand Identity</span>
+  </div>
+
+  <div class="ds-card" style="margin-bottom:0.75rem">
+    <div class="ds-label">Logo system</div>
+    <div style="display:flex;align-items:center;gap:1rem;padding:1rem;background:var(--kp-cream);border-radius:var(--border-radius-md)">
+      <svg viewBox="0 0 36 44" width="44" height="54" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 0 H24 L36 12 V44 H2 Z" rx="2" fill="#0A2540"/>
+        <path d="M24 0 L36 12 H24 Z" fill="#15406B"/>
+        <rect x="8" y="18" width="20" height="2" rx="1" fill="#FAF8F5" opacity="0.85"/>
+        <rect x="8" y="24" width="20" height="2" rx="1" fill="#FAF8F5" opacity="0.85"/>
+        <rect x="8" y="30" width="14" height="2" rx="1" fill="#C96A00"/>
+      </svg>
+      <div>
+        <div style="font-family:var(--ff-d);font-size:26px;font-weight:700;color:var(--kp-navy);letter-spacing:-0.5px">Know<span style="color:var(--kp-amber)">Ur</span>Policy</div>
+        <div style="font-size:12px;color:var(--kp-navy-2);margin-top:2px;font-weight:500">Understand before you sign.</div>
+      </div>
+    </div>
+    <div class="logo-var-row">
+      <div>
+        <div class="ds-label" style="margin-bottom:4px">On dark</div>
+        <div class="logo-var dark-bg">
+          <svg viewBox="0 0 36 44" width="28" height="34"><path d="M2 0 H24 L36 12 V44 H2 Z" rx="2" fill="#FAF8F5" opacity="0.9"/><path d="M24 0 L36 12 H24 Z" fill="#D1C9BE" opacity="0.7"/><rect x="8" y="18" width="20" height="2" rx="1" fill="#0A2540"/><rect x="8" y="24" width="20" height="2" rx="1" fill="#0A2540"/><rect x="8" y="30" width="14" height="2" rx="1" fill="#C96A00"/></svg>
+          <span style="font-family:var(--ff-d);font-size:14px;font-weight:700;color:#FAF8F5">Know<span style="color:#E07B00">Ur</span>Policy</span>
+        </div>
+      </div>
+      <div>
+        <div class="ds-label" style="margin-bottom:4px">Icon only</div>
+        <div class="logo-var">
+          <svg viewBox="0 0 36 44" width="28" height="34"><path d="M2 0 H24 L36 12 V44 H2 Z" rx="2" fill="#0A2540"/><path d="M24 0 L36 12 H24 Z" fill="#15406B"/><rect x="8" y="18" width="20" height="2" rx="1" fill="#FAF8F5" opacity="0.85"/><rect x="8" y="24" width="20" height="2" rx="1" fill="#FAF8F5" opacity="0.85"/><rect x="8" y="30" width="14" height="2" rx="1" fill="#C96A00"/></svg>
+        </div>
+      </div>
+      <div>
+        <div class="ds-label" style="margin-bottom:4px">On amber</div>
+        <div class="logo-var amber-bg">
+          <svg viewBox="0 0 36 44" width="28" height="34"><path d="M2 0 H24 L36 12 V44 H2 Z" rx="2" fill="#FAF8F5"/><path d="M24 0 L36 12 H24 Z" fill="#D1C9BE"/><rect x="8" y="18" width="20" height="2" rx="1" fill="#0A2540"/><rect x="8" y="24" width="20" height="2" rx="1" fill="#0A2540"/><rect x="8" y="30" width="14" height="2" rx="1" fill="#7A4800"/></svg>
+          <span style="font-family:var(--ff-d);font-size:14px;font-weight:700;color:#FAF8F5">Know<span style="color:#FAF8F5" style="opacity:0.8">Ur</span>Policy</span>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:0.75rem;padding:0.75rem;border:0.5px solid var(--kp-r-border);border-radius:var(--border-radius-md);background:var(--kp-r-bg)">
+      <div style="font-size:11px;font-weight:600;color:var(--kp-r-text);margin-bottom:3px">Logo rationale</div>
+      <div style="font-size:11px;color:var(--kp-navy-2);line-height:1.55">The mark is a document with a folded corner — referencing PDF/policy documents — and three lines inside. The bottom amber line represents the key insight extracted from complexity. The amber "Ur" in the logotype signals the personal, accessible tone. Playfair Display signals authority without coldness.</div>
+    </div>
+  </div>
+
+  <div class="brand-voice-grid">
+    <div class="bv-card">
+      <i class="ti ti-shield-check bv-icon" aria-hidden="true"></i>
+      <div class="bv-title">Trustworthy</div>
+      <div class="bv-yes">✓ "This policy covers..."</div>
+      <div class="bv-no">✗ "We think this means..."</div>
+    </div>
+    <div class="bv-card">
+      <i class="ti ti-bolt bv-icon" aria-hidden="true"></i>
+      <div class="bv-title">Clear &amp; Direct</div>
+      <div class="bv-yes">✓ "You must notify within 30 days"</div>
+      <div class="bv-no">✗ "It appears notification may be required"</div>
+    </div>
+    <div class="bv-card">
+      <i class="ti ti-users bv-icon" aria-hidden="true"></i>
+      <div class="bv-title">Human, not Legal</div>
+      <div class="bv-yes">✓ "Plain English summary"</div>
+      <div class="bv-no">✗ "Pursuant to section 4(a)..."</div>
+    </div>
+  </div>
+</div>
+
+<div class="ds-section">
+  <div class="ds-sec-header">
+    <span class="ds-sec-num">02</span>
+    <span class="ds-sec-title">Color System</span>
+  </div>
+  <div class="swatch-grid" style="margin-bottom:0.75rem">
+    <div class="swatch">
+      <div class="swatch-color" style="background:#0A2540"></div>
+      <div class="swatch-info"><div class="swatch-name">Navy</div><div class="swatch-hex">#0A2540</div><div class="swatch-use">Primary brand, headings, nav</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#15406B"></div>
+      <div class="swatch-info"><div class="swatch-name">Navy Mid</div><div class="swatch-hex">#15406B</div><div class="swatch-use">Body text, secondary UI</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#C96A00"></div>
+      <div class="swatch-info"><div class="swatch-name">Amber</div><div class="swatch-hex">#C96A00</div><div class="swatch-use">Primary CTA, accents</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#FEF3E2"></div>
+      <div class="swatch-info"><div class="swatch-name">Amber Light</div><div class="swatch-hex">#FEF3E2</div><div class="swatch-use">CTA hover bg, highlights</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#FAF8F5;border:1px solid #e8e5e0"></div>
+      <div class="swatch-info"><div class="swatch-name">Cream</div><div class="swatch-hex">#FAF8F5</div><div class="swatch-use">Page bg, screen bg</div></div>
+    </div>
+  </div>
+  <div class="ds-label">Semantic — Risk flag colors</div>
+  <div class="swatch-grid" style="margin-top:0.5rem">
+    <div class="swatch">
+      <div class="swatch-color" style="background:#0A6640"></div>
+      <div class="swatch-info"><div class="swatch-name">Green</div><div class="swatch-hex">#0A6640</div><div class="swatch-use">Standard / Covered</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#E8F7EF"></div>
+      <div class="swatch-info"><div class="swatch-name">Green BG</div><div class="swatch-hex">#E8F7EF</div><div class="swatch-use">Green flag background</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#B07800"></div>
+      <div class="swatch-info"><div class="swatch-name">Amber</div><div class="swatch-hex">#B07800</div><div class="swatch-use">Watch / Obligations</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#FFF8DC"></div>
+      <div class="swatch-info"><div class="swatch-name">Yellow BG</div><div class="swatch-hex">#FFF8DC</div><div class="swatch-use">Yellow flag background</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#A01515"></div>
+      <div class="swatch-info"><div class="swatch-name">Red</div><div class="swatch-hex">#A01515</div><div class="swatch-use">Red flag / Exclusions</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#FEF0F0"></div>
+      <div class="swatch-info"><div class="swatch-name">Red BG</div><div class="swatch-hex">#FEF0F0</div><div class="swatch-use">Red flag background</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="ds-section">
+  <div class="ds-sec-header">
+    <span class="ds-sec-num">03</span>
+    <span class="ds-sec-title">Typography</span>
+  </div>
+  <div class="ds-card">
+    <div style="margin-bottom:1rem;padding-bottom:1rem;border-bottom:0.5px solid var(--kp-border)">
+      <div class="ds-label">Display font — Playfair Display</div>
+      <div style="font-family:var(--ff-d);font-size:28px;font-weight:700;color:var(--kp-navy);line-height:1.2;margin-top:0.25rem">Aa Bb Cc — Know before you sign</div>
+      <div style="font-size:11px;color:var(--kp-navy-2);margin-top:4px">Used for: Hero headlines, section titles, card headings, brand name</div>
+    </div>
+    <div>
+      <div class="ds-label">Body font — Plus Jakarta Sans</div>
+      <div style="font-family:var(--ff-b);font-size:18px;font-weight:400;color:var(--kp-navy);margin-top:0.25rem">Aa Bb Cc — Your document, decoded.</div>
+      <div style="font-size:11px;color:var(--kp-navy-2);margin-top:4px">Used for: All body text, UI labels, buttons, navigation, clause explanations</div>
+    </div>
+    <div style="margin-top:1rem;padding-top:1rem;border-top:0.5px solid var(--kp-border)">
+      <div class="type-row"><div class="type-meta">Playfair Display 700 / 36px / lh 1.15 / Hero H1</div><div class="t-h1">Know what you're signing</div></div>
+      <div class="type-row"><div class="type-meta">Playfair Display 700 / 26px / lh 1.2 / Section H2</div><div class="t-h2">What's covered</div></div>
+      <div class="type-row"><div class="type-meta">Plus Jakarta Sans 600 / 18px / lh 1.3 / Card H3</div><div class="t-h3">Water damage exclusion</div></div>
+      <div class="type-row"><div class="type-meta">Plus Jakarta Sans 600 / 15px / lh 1.4 / Label H4</div><div class="t-h4">Deductible — $1,500 per claim</div></div>
+      <div class="type-row"><div class="type-meta">Plus Jakarta Sans 400 / 15px / lh 1.65 / Body</div><div class="t-body">This policy covers fire, theft, and accidental damage to the structure of your home. Your personal belongings are covered up to $50,000. Medical liability is included up to $100,000.</div></div>
+      <div class="type-row"><div class="type-meta">Plus Jakarta Sans 400 / 13px / lh 1.5 / Small / Muted</div><div class="t-small">This document does not constitute legal advice. Analysis reflects document content only.</div></div>
+      <div class="type-row"><div class="type-meta">Plus Jakarta Sans 600 / 11px / ls 0.7px / ALL CAPS / Labels</div><div class="t-label">What's not covered</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="ds-section">
+  <div class="ds-sec-header">
+    <span class="ds-sec-num">04</span>
+    <span class="ds-sec-title">Component Library</span>
+  </div>
+
+  <div class="ds-card" style="margin-bottom:0.75rem">
+    <div class="ds-label">Buttons</div>
+    <div class="comp-row" style="margin-top:0.5rem">
+      <button class="btn-p">Analyse document</button>
+      <button class="btn-s">View sample</button>
+      <button class="btn-g">Cancel</button>
+      <button class="btn-sm">Upgrade to Pro</button>
+      <button class="btn-dis" disabled>Processing...</button>
+    </div>
+  </div>
+
+  <div class="ds-card" style="margin-bottom:0.75rem">
+    <div class="ds-label">Risk flag badges</div>
+    <div class="comp-row" style="margin-top:0.5rem;gap:0.75rem">
+      <span class="flag flag-g"><i class="ti ti-circle-check" aria-hidden="true"></i> Standard</span>
+      <span class="flag flag-y"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Watch</span>
+      <span class="flag flag-r"><i class="ti ti-alert-circle" aria-hidden="true"></i> Red flag</span>
+      <span class="score-pill score-easy"><i class="ti ti-file-check" aria-hidden="true"></i> Easy — 82/100</span>
+      <span class="score-pill score-mod"><i class="ti ti-file-text" aria-hidden="true"></i> Moderate — 54/100</span>
+      <span class="score-pill score-cx"><i class="ti ti-file-x" aria-hidden="true"></i> Complex — 28/100</span>
+    </div>
+  </div>
+
+  <div class="ds-card" style="margin-bottom:0.75rem">
+    <div class="ds-label">Clause cards — risk flag variants</div>
+    <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.5rem">
+      <div class="clause-card">
+        <div class="clause-card-inner">
+          <div class="clause-stripe" style="background:var(--kp-g-text)"></div>
+          <div class="clause-body">
+            <div class="clause-header">
+              <span class="clause-title">Fire and smoke damage</span>
+              <span class="flag flag-g" style="font-size:10px;padding:2px 8px">Standard</span>
+            </div>
+            <div class="clause-text">Your home is fully covered for fire, smoke, and explosion damage including the building structure and any attached structures such as garages.</div>
+          </div>
+        </div>
+      </div>
+      <div class="clause-card">
+        <div class="clause-card-inner">
+          <div class="clause-stripe" style="background:var(--kp-y-border)"></div>
+          <div class="clause-body">
+            <div class="clause-header">
+              <span class="clause-title">Claim notice period</span>
+              <span class="flag flag-y" style="font-size:10px;padding:2px 8px">Watch</span>
+            </div>
+            <div class="clause-text">You must report any claim within 14 days of the incident. Late reporting may reduce or void your payout, even if the damage is covered.</div>
+          </div>
+        </div>
+      </div>
+      <div class="clause-card">
+        <div class="clause-card-inner">
+          <div class="clause-stripe" style="background:var(--kp-r-text)"></div>
+          <div class="clause-body">
+            <div class="clause-header">
+              <span class="clause-title">Flood damage excluded</span>
+              <span class="flag flag-r" style="font-size:10px;padding:2px 8px">Red flag</span>
+            </div>
+            <div class="clause-text">All flood damage — including groundwater, storm surge, and overflow from rivers or lakes — is completely excluded. A separate flood policy is required.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ds-card" style="margin-bottom:0.75rem">
+    <div class="ds-label">Upload dropzone</div>
+    <div class="upload-zone" style="margin-top:0.5rem">
+      <i class="ti ti-cloud-upload upload-icon" aria-hidden="true"></i>
+      <div class="upload-text">Drag and drop your PDF here</div>
+      <div class="upload-sub">or click to browse — PDF only, max 10MB</div>
+    </div>
+  </div>
+
+  <div class="ds-card">
+    <div class="ds-label">Input fields</div>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.5rem;padding:0.875rem;background:var(--kp-cream);border-radius:var(--border-radius-md)">
+      <div class="inp-wrap"><label class="inp-label">Email address</label><input class="inp" type="email" placeholder="you@company.com"></div>
+      <div class="inp-wrap"><label class="inp-label">Ask about your document</label><input class="inp" type="text" placeholder="Does this cover water damage?" style="width:260px"></div>
+    </div>
+  </div>
+</div>
+
+<div class="ds-section">
+  <div class="ds-sec-header">
+    <span class="ds-sec-num">05</span>
+    <span class="ds-sec-title">Screen Designs</span>
+  </div>
+
+  <div style="margin-bottom:1rem">
+    <div class="ds-label" style="margin-bottom:0.5rem">Screen 1 — Landing page</div>
+    <div class="screen-wrap">
+      <div class="screen">
+        <div class="nav-bar">
+          <div class="nav-left">
+            <svg viewBox="0 0 36 44" width="18" height="22"><path d="M2 0 H24 L36 12 V44 H2 Z" rx="2" fill="#0A2540"/><path d="M24 0 L36 12 H24 Z" fill="#15406B"/><rect x="8" y="18" width="20" height="2" rx="1" fill="#FAF8F5" opacity="0.85"/><rect x="8" y="24" width="20" height="2" rx="1" fill="#FAF8F5" opacity="0.85"/><rect x="8" y="30" width="14" height="2" rx="1" fill="#C96A00"/></svg>
+            <span class="nav-logo-text">Know<span>Ur</span>Policy</span>
+          </div>
+          <div class="nav-links">
+            <span class="nav-link">How it works</span>
+            <span class="nav-link">Pricing</span>
+            <button class="btn-sm">Try free</button>
+          </div>
+        </div>
+        <div class="screen-hero">
+          <div class="hero-eyebrow">AI-powered document clarity</div>
+          <div class="hero-h">Understand your policy<br>before it's too late to <em>act</em></div>
+          <div class="hero-sub">Upload any insurance policy, contract, or legal document. Get a plain-English breakdown of what's covered, what's not, and what puts you at risk — in 30 seconds.</div>
+          <div class="hero-cta-row">
+            <button class="btn-p" style="font-size:14px;padding:11px 28px">Upload your document — it's free</button>
+            <button class="btn-g" style="font-size:13px">See a sample →</button>
+          </div>
+          <div class="trust-bar">
+            <span class="trust-item"><i class="ti ti-shield-lock trust-icon" aria-hidden="true"></i> Document deleted immediately</span>
+            <span class="trust-item"><i class="ti ti-lock trust-icon" aria-hidden="true"></i> GDPR compliant</span>
+            <span class="trust-item"><i class="ti ti-file-off trust-icon" aria-hidden="true"></i> Never used for AI training</span>
+          </div>
+        </div>
+        <div class="features-row">
+          <div class="feat-card">
+            <i class="ti ti-list-check feat-icon" aria-hidden="true"></i>
+            <div class="feat-title">Clause breakdown</div>
+            <div class="feat-desc">Every clause explained in plain English with a risk flag</div>
+          </div>
+          <div class="feat-card">
+            <i class="ti ti-alert-triangle feat-icon" aria-hidden="true"></i>
+            <div class="feat-title">Exclusion spotlight</div>
+            <div class="feat-desc">What's NOT covered — the section insurers don't highlight</div>
+          </div>
+          <div class="feat-card">
+            <i class="ti ti-message-circle feat-icon" aria-hidden="true"></i>
+            <div class="feat-title">Ask anything</div>
+            <div class="feat-desc">Get direct answers from your specific document</div>
+          </div>
+        </div>
+        <div class="pricing-row">
+          <div class="pricing-card">
+            <div class="pricing-tier">Free</div>
+            <div class="pricing-price">$0<span> forever</span></div>
+            <ul class="pricing-features">
+              <li><i class="ti ti-check" aria-hidden="true"></i> 1 full document analysis</li>
+              <li><i class="ti ti-check" aria-hidden="true"></i> 3 Q&amp;A questions</li>
+              <li><i class="ti ti-check" aria-hidden="true"></i> All 5 clause sections</li>
+            </ul>
+            <button class="btn-s" style="width:100%;font-size:12px;padding:8px">Get started</button>
+          </div>
+          <div class="pricing-card featured">
+            <div class="pricing-tag">Most popular</div>
+            <div class="pricing-tier">Pro</div>
+            <div class="pricing-price">$9.99<span>/month</span></div>
+            <ul class="pricing-features">
+              <li><i class="ti ti-check" aria-hidden="true"></i> Unlimited analyses</li>
+              <li><i class="ti ti-check" aria-hidden="true"></i> Unlimited Q&amp;A</li>
+              <li><i class="ti ti-check" aria-hidden="true"></i> PDF export</li>
+            </ul>
+            <button class="btn-p" style="width:100%;font-size:12px;padding:8px">Start Pro</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:1rem">
+    <div class="ds-label" style="margin-bottom:0.5rem">Screen 2 — Upload screen</div>
+    <div class="screen-wrap">
+      <div class="screen">
+        <div class="nav-bar">
+          <div class="nav-left">
+            <svg viewBox="0 0 36 44" width="18" height="22"><path d="M2 0 H24 L36 12 V44 H2 Z" rx="2" fill="#0A2540"/><path d="M24 0 L36 12 H24 Z" fill="#15406B"/><rect x="8" y="18" width="20" height="2" rx="1" fill="#FAF8F5" opacity="0.85"/><rect x="8" y="24" width="20" height="2" rx="1" fill="#FAF8F5" opacity="0.85"/><rect x="8" y="30" width="14" height="2" rx="1" fill="#C96A00"/></svg>
+            <span class="nav-logo-text">Know<span>Ur</span>Policy</span>
+          </div>
+        </div>
+        <div class="screen-upload">
+          <div class="upload-head">Upload your document</div>
+          <div class="upload-sub-head">Insurance policy, lease agreement, freelance contract, or any legal document</div>
+          <div class="upload-zone">
+            <i class="ti ti-cloud-upload" style="font-size:36px;color:var(--kp-amber);display:block;margin:0 auto 0.75rem" aria-hidden="true"></i>
+            <div class="upload-text">Drag and drop your PDF here</div>
+            <div class="upload-sub" style="margin-top:5px">or <span style="color:var(--kp-amber);font-weight:600;cursor:pointer">click to browse</span> — PDF only, max 10MB</div>
+          </div>
+          <div class="privacy-note">
+            <i class="ti ti-shield-check" style="font-size:16px;color:var(--kp-g-text);flex-shrink:0" aria-hidden="true"></i>
+            <div class="privacy-note-text"><strong>Your document is safe.</strong> It is analysed and immediately deleted. We never store your files, never share them, and never use them to train AI models. GDPR compliant.</div>
+          </div>
+          <button class="btn-dis" style="width:100%;padding:12px;font-size:14px;text-align:center" disabled>Select a file to continue</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:1rem">
+    <div class="ds-label" style="margin-bottom:0.5rem">Screen 3 — Analysis output (main product screen)</div>
+    <div class="screen-wrap">
+      <div class="screen">
+        <div class="nav-bar">
+          <div class="nav-left">
+            <svg viewBox="0 0 36 44" width="18" height="22"><path d="M2 0 H24 L36 12 V44 H2 Z" rx="2" fill="#0A2540"/><path d="M24 0 L36 12 H24 Z" fill="#15406B"/><rect x="8" y="18" width="20" height="2" rx="1" fill="#FAF8F5" opacity="0.85"/><rect x="8" y="24" width="20" height="2" rx="1" fill="#FAF8F5" opacity="0.85"/><rect x="8" y="30" width="14" height="2" rx="1" fill="#C96A00"/></svg>
+            <span class="nav-logo-text">Know<span>Ur</span>Policy</span>
+          </div>
+        </div>
+        <div class="analysis-header">
+          <div class="analysis-filename">
+            <i class="ti ti-file-text" style="font-size:14px;color:var(--kp-amber)" aria-hidden="true"></i>
+            <span>home_insurance_policy_2024.pdf</span>
+          </div>
+          <div class="analysis-actions">
+            <span class="score-pill score-mod"><i class="ti ti-file-text" aria-hidden="true"></i> Moderate — 54/100</span>
+            <button class="btn-sm" style="font-size:10px;padding:5px 10px">Ask a question</button>
+            <button class="btn-s" style="font-size:10px;padding:5px 10px;border-color:var(--kp-border-2)"><i class="ti ti-download" aria-hidden="true"></i> Export PDF</button>
+          </div>
+        </div>
+        <div class="analysis-body">
+          <div class="summary-card">
+            <div class="summary-label">Plain English summary</div>
+            <div class="summary-text">This is a standard homeowners policy covering fire, theft, and weather damage to your property. It includes personal liability up to $100,000. Key exclusions include all flood damage and gradual wear and tear. You must notify the insurer within 14 days of any incident to remain eligible for a claim.</div>
+          </div>
+          <div class="section-accordion">
+            <div class="acc-header">
+              <span class="acc-title"><i class="ti ti-circle-check" style="color:var(--kp-g-text)" aria-hidden="true"></i> What's covered <span class="acc-count">6 clauses</span></span>
+              <i class="ti ti-chevron-up" style="color:var(--kp-navy-2);font-size:14px" aria-hidden="true"></i>
+            </div>
+            <div class="acc-body">
+              <div class="clause-card"><div class="clause-card-inner"><div class="clause-stripe" style="background:var(--kp-g-text)"></div><div class="clause-body"><div class="clause-header"><span class="clause-title">Fire and smoke damage</span><span class="flag flag-g" style="font-size:10px;padding:2px 8px">Standard</span></div><div class="clause-text">Your home is fully covered for fire, smoke, and explosion damage to the building structure and attached structures.</div></div></div></div>
+              <div class="clause-card"><div class="clause-card-inner"><div class="clause-stripe" style="background:var(--kp-g-text)"></div><div class="clause-body"><div class="clause-header"><span class="clause-title">Theft and vandalism</span><span class="flag flag-g" style="font-size:10px;padding:2px 8px">Standard</span></div><div class="clause-text">Break-in, theft, and malicious damage are covered. You must file a police report within 48 hours.</div></div></div></div>
+            </div>
+          </div>
+          <div class="section-accordion">
+            <div class="acc-header" style="background:var(--kp-r-bg)">
+              <span class="acc-title"><i class="ti ti-x" style="color:var(--kp-r-text)" aria-hidden="true"></i> What's NOT covered <span class="acc-count" style="background:var(--kp-r-bg);color:var(--kp-r-text);border:1px solid var(--kp-r-border)">4 exclusions</span></span>
+              <i class="ti ti-chevron-up" style="color:var(--kp-navy-2);font-size:14px" aria-hidden="true"></i>
+            </div>
+            <div class="acc-body">
+              <div class="clause-card"><div class="clause-card-inner"><div class="clause-stripe" style="background:var(--kp-r-text)"></div><div class="clause-body"><div class="clause-header"><span class="clause-title">Flood damage</span><span class="flag flag-r" style="font-size:10px;padding:2px 8px">Red flag</span></div><div class="clause-text">All flooding — including groundwater, storm surge, and river overflow — is completely excluded. A separate flood insurance policy is needed.</div></div></div></div>
+              <div class="clause-card"><div class="clause-card-inner"><div class="clause-stripe" style="background:var(--kp-r-text)"></div><div class="clause-body"><div class="clause-header"><span class="clause-title">Wear and tear</span><span class="flag flag-r" style="font-size:10px;padding:2px 8px">Red flag</span></div><div class="clause-text">Gradual deterioration, rust, rot, or mould from ongoing neglect is not covered regardless of the amount of damage caused.</div></div></div></div>
+            </div>
+          </div>
+          <div class="section-accordion">
+            <div class="acc-header">
+              <span class="acc-title"><i class="ti ti-clock" style="color:var(--kp-y-text)" aria-hidden="true"></i> Deadlines &amp; limits <span class="acc-count" style="background:var(--kp-y-bg);color:var(--kp-y-text);border:1px solid var(--kp-y-border)">3 items</span></span>
+              <i class="ti ti-chevron-down" style="color:var(--kp-navy-2);font-size:14px" aria-hidden="true"></i>
+            </div>
+          </div>
+          <div class="section-accordion">
+            <div class="acc-header">
+              <span class="acc-title"><i class="ti ti-clipboard-list" style="color:var(--kp-y-text)" aria-hidden="true"></i> Your obligations <span class="acc-count" style="background:var(--kp-y-bg);color:var(--kp-y-text);border:1px solid var(--kp-y-border)">2 items</span></span>
+              <i class="ti ti-chevron-down" style="color:var(--kp-navy-2);font-size:14px" aria-hidden="true"></i>
+            </div>
+          </div>
+          <div class="section-accordion" style="margin-bottom:0">
+            <div class="acc-header" style="background:var(--kp-r-bg)">
+              <span class="acc-title"><i class="ti ti-alert-circle" style="color:var(--kp-r-text)" aria-hidden="true"></i> Watch list <span class="acc-count" style="background:var(--kp-r-bg);color:var(--kp-r-text);border:1px solid var(--kp-r-border)">2 flags</span></span>
+              <i class="ti ti-chevron-down" style="color:var(--kp-navy-2);font-size:14px" aria-hidden="true"></i>
+            </div>
+          </div>
+        </div>
+        <div class="disclaimer-bar">
+          <i class="ti ti-info-circle" style="font-size:14px;color:var(--kp-amber);flex-shrink:0;margin-top:1px" aria-hidden="true"></i>
+          <div class="disclaimer-text"><strong>KnowUrPolicy helps you understand documents.</strong> This is not legal advice. For decisions with legal consequences, please consult a qualified attorney.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="ds-label" style="margin-bottom:0.5rem">Mobile — analysis output at 375px</div>
+    <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:0.75rem">
+      <div class="mobile-hint">
+        <div class="mobile-screen">
+          <div class="mob-title">Analysis output</div>
+          <div style="background:var(--color-background-primary);border-radius:var(--border-radius-md);padding:0.5rem;margin-bottom:0.4rem;border:0.5px solid var(--kp-border)">
+            <div style="font-size:9px;font-weight:600;color:var(--kp-amber);margin-bottom:3px;letter-spacing:0.5px">PLAIN ENGLISH SUMMARY</div>
+            <div style="font-size:9px;color:var(--kp-navy);line-height:1.5">Standard homeowners policy. Key exclusions: flood, wear &amp; tear. Must report claims within 14 days.</div>
+          </div>
+          <div class="mob-card">
+            <div class="mob-acc-h">
+              <span class="mob-acc-t"><i class="ti ti-circle-check" style="color:var(--kp-g-text);font-size:11px" aria-hidden="true"></i> What's covered</span>
+              <span style="font-size:9px;color:var(--kp-g-text);font-weight:600">6</span>
+            </div>
+          </div>
+          <div class="mob-card" style="border-color:var(--kp-r-border)">
+            <div class="mob-acc-h" style="background:var(--kp-r-bg)">
+              <span class="mob-acc-t"><i class="ti ti-x" style="color:var(--kp-r-text);font-size:11px" aria-hidden="true"></i> Not covered</span>
+              <span style="font-size:9px;color:var(--kp-r-text);font-weight:600">4</span>
+            </div>
+            <div style="padding:0.4rem 0.5rem;background:var(--kp-cream)">
+              <div class="mob-clause">
+                <div class="mob-stripe" style="background:var(--kp-r-text)"></div>
+                <div><div class="mob-ct">Flood damage</div><div class="mob-cb">All flooding is excluded. Separate flood policy needed.</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="mob-card">
+            <div class="mob-acc-h">
+              <span class="mob-acc-t"><i class="ti ti-clock" style="color:var(--kp-y-text);font-size:11px" aria-hidden="true"></i> Deadlines</span>
+              <span style="font-size:9px;color:var(--kp-y-text);font-weight:600">3</span>
+            </div>
+          </div>
+          <button style="width:100%;background:var(--kp-amber);color:#fff;border:none;border-radius:var(--border-radius-md);padding:6px;font-size:9px;font-weight:600;margin-top:0.4rem;cursor:pointer">Ask a question about this document</button>
+        </div>
+        <div style="flex:1;padding-left:0.5rem">
+          <div style="font-size:12px;font-weight:600;color:var(--kp-navy);margin-bottom:0.5rem">Mobile design rules</div>
+          <div style="display:flex;flex-direction:column;gap:0.4rem">
+            <div style="display:flex;gap:6px;align-items:flex-start"><span style="font-size:14px;color:var(--kp-g-text)">✓</span><span style="font-size:11px;color:var(--kp-navy-2)">Accordions collapsed by default on mobile</span></div>
+            <div style="display:flex;gap:6px;align-items:flex-start"><span style="font-size:14px;color:var(--kp-g-text)">✓</span><span style="font-size:11px;color:var(--kp-navy-2)">Summary card always visible above fold</span></div>
+            <div style="display:flex;gap:6px;align-items:flex-start"><span style="font-size:14px;color:var(--kp-g-text)">✓</span><span style="font-size:11px;color:var(--kp-navy-2)">"Not covered" section shown first after summary</span></div>
+            <div style="display:flex;gap:6px;align-items:flex-start"><span style="font-size:14px;color:var(--kp-g-text)">✓</span><span style="font-size:11px;color:var(--kp-navy-2)">Q&amp;A as full-screen modal on mobile</span></div>
+            <div style="display:flex;gap:6px;align-items:flex-start"><span style="font-size:14px;color:var(--kp-g-text)">✓</span><span style="font-size:11px;color:var(--kp-navy-2)">Min touch target 44px for all interactive elements</span></div>
+            <div style="display:flex;gap:6px;align-items:flex-start"><span style="font-size:14px;color:var(--kp-g-text)">✓</span><span style="font-size:11px;color:var(--kp-navy-2)">Disclaimer pinned to bottom of viewport</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="ds-section">
+  <div class="ds-sec-header">
+    <span class="ds-sec-num">06</span>
+    <span class="ds-sec-title">Spacing System</span>
+  </div>
+  <div class="ds-card">
+    <div class="sp-grid">
+      <div class="sp-item"><div class="sp-block" style="width:4px;height:4px"></div><div class="sp-val">4px</div></div>
+      <div class="sp-item"><div class="sp-block" style="width:8px;height:8px"></div><div class="sp-val">8px</div></div>
+      <div class="sp-item"><div class="sp-block" style="width:12px;height:12px"></div><div class="sp-val">12px</div></div>
+      <div class="sp-item"><div class="sp-block" style="width:16px;height:16px"></div><div class="sp-val">16px</div></div>
+      <div class="sp-item"><div class="sp-block" style="width:20px;height:20px"></div><div class="sp-val">20px</div></div>
+      <div class="sp-item"><div class="sp-block" style="width:24px;height:24px"></div><div class="sp-val">24px</div></div>
+      <div class="sp-item"><div class="sp-block" style="width:32px;height:32px"></div><div class="sp-val">32px</div></div>
+      <div class="sp-item"><div class="sp-block" style="width:48px;height:48px"></div><div class="sp-val">48px</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="ds-section">
+  <div class="ds-sec-header">
+    <span class="ds-sec-num">07</span>
+    <span class="ds-sec-title">Design Tokens — for Claude Code</span>
+  </div>
+  <div class="token-block">
+    <div><span class="tok-comment">/* KnowUrPolicy Design Tokens — paste into globals.css */</span></div>
+    <div>&nbsp;</div>
+    <div><span class="tok-comment">/* Brand Colors */</span></div>
+    <div><span class="tok-var">--kp-navy</span>: <span class="tok-val">#0A2540</span>;</div>
+    <div><span class="tok-var">--kp-navy-mid</span>: <span class="tok-val">#15406B</span>;</div>
+    <div><span class="tok-var">--kp-navy-light</span>: <span class="tok-val">#1E5490</span>;</div>
+    <div><span class="tok-var">--kp-amber</span>: <span class="tok-val-amber">#C96A00</span>;</div>
+    <div><span class="tok-var">--kp-amber-hover</span>: <span class="tok-val-amber">#E07B00</span>;</div>
+    <div><span class="tok-var">--kp-amber-bg</span>: <span class="tok-val-amber">#FEF3E2</span>;</div>
+    <div><span class="tok-var">--kp-cream</span>: <span class="tok-val">#FAF8F5</span>;</div>
+    <div>&nbsp;</div>
+    <div><span class="tok-comment">/* Semantic — Risk flags */</span></div>
+    <div><span class="tok-var">--kp-flag-green-text</span>: <span class="tok-val">#0A6640</span>;</div>
+    <div><span class="tok-var">--kp-flag-green-bg</span>: <span class="tok-val">#E8F7EF</span>;</div>
+    <div><span class="tok-var">--kp-flag-yellow-text</span>: <span class="tok-val-amber">#7A5500</span>;</div>
+    <div><span class="tok-var">--kp-flag-yellow-bg</span>: <span class="tok-val-amber">#FFF8DC</span>;</div>
+    <div><span class="tok-var">--kp-flag-red-text</span>: <span class="tok-val-sem">#A01515</span>;</div>
+    <div><span class="tok-var">--kp-flag-red-bg</span>: <span class="tok-val-sem">#FEF0F0</span>;</div>
+    <div>&nbsp;</div>
+    <div><span class="tok-comment">/* Typography */</span></div>
+    <div><span class="tok-var">--kp-font-display</span>: <span class="tok-val">'Playfair Display', Georgia, serif</span>;</div>
+    <div><span class="tok-var">--kp-font-body</span>: <span class="tok-val">'Plus Jakarta Sans', sans-serif</span>;</div>
+    <div>&nbsp;</div>
+    <div><span class="tok-comment">/* Font sizes */</span></div>
+    <div><span class="tok-var">--kp-text-xs</span>: <span class="tok-val">11px</span>; <span class="tok-comment">/* labels, meta */</span></div>
+    <div><span class="tok-var">--kp-text-sm</span>: <span class="tok-val">13px</span>; <span class="tok-comment">/* clauses, small UI */</span></div>
+    <div><span class="tok-var">--kp-text-base</span>: <span class="tok-val">15px</span>; <span class="tok-comment">/* body text */</span></div>
+    <div><span class="tok-var">--kp-text-lg</span>: <span class="tok-val">18px</span>; <span class="tok-comment">/* H3 */</span></div>
+    <div><span class="tok-var">--kp-text-xl</span>: <span class="tok-val">26px</span>; <span class="tok-comment">/* H2 (Playfair) */</span></div>
+    <div><span class="tok-var">--kp-text-2xl</span>: <span class="tok-val">36px</span>; <span class="tok-comment">/* H1 hero (Playfair) */</span></div>
+    <div>&nbsp;</div>
+    <div><span class="tok-comment">/* Spacing */</span></div>
+    <div><span class="tok-var">--kp-space-1</span>: <span class="tok-val">4px</span>; <span class="tok-var">--kp-space-2</span>: <span class="tok-val">8px</span>; <span class="tok-var">--kp-space-3</span>: <span class="tok-val">12px</span>;</div>
+    <div><span class="tok-var">--kp-space-4</span>: <span class="tok-val">16px</span>; <span class="tok-var">--kp-space-5</span>: <span class="tok-val">20px</span>; <span class="tok-var">--kp-space-6</span>: <span class="tok-val">24px</span>;</div>
+    <div><span class="tok-var">--kp-space-8</span>: <span class="tok-val">32px</span>; <span class="tok-var">--kp-space-12</span>: <span class="tok-val">48px</span>;</div>
+    <div>&nbsp;</div>
+    <div><span class="tok-comment">/* Border radius */</span></div>
+    <div><span class="tok-var">--kp-radius-sm</span>: <span class="tok-val">6px</span>; <span class="tok-var">--kp-radius-md</span>: <span class="tok-val">10px</span>; <span class="tok-var">--kp-radius-lg</span>: <span class="tok-val">14px</span>;</div>
+    <div>&nbsp;</div>
+    <div><span class="tok-comment">/* Border */</span></div>
+    <div><span class="tok-var">--kp-border</span>: <span class="tok-val">rgba(10, 37, 64, 0.12)</span>;</div>
+    <div><span class="tok-var">--kp-border-2</span>: <span class="tok-val">rgba(10, 37, 64, 0.22)</span>;</div>
+    <div>&nbsp;</div>
+    <div><span class="tok-comment">/* Clause stripe width */</span></div>
+    <div><span class="tok-var">--kp-stripe-width</span>: <span class="tok-val">4px</span>;</div>
+  </div>
+</div>
+
+</div>

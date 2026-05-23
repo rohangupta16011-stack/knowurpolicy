@@ -10,18 +10,39 @@ const MAX_BYTES = 10 * 1024 * 1024; // 10MB per PRD §6.2
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: NextRequest) {
-  const form = await req.formData().catch(() => null);
+  const form = await req.formData().catch((e) => {
+    console.error(`[analyze] formData parse failed: ${e instanceof Error ? e.message : e}`);
+    return null;
+  });
   if (!form) {
     return NextResponse.json(
-      { error: "unsupported_type", message: "Only PDF files are supported right now." },
+      {
+        error: "unsupported_type",
+        message: "We couldn't read the upload. Please try again.",
+      },
       { status: 400 },
     );
   }
 
+  // Debug-log every field so we can see exactly what the browser sent.
+  // Captured in Vercel logs as `[analyze] form: ...`.
+  const summary = Array.from(form.entries())
+    .map(([k, v]) =>
+      v instanceof File
+        ? `${k}=File(name=${JSON.stringify(v.name)}, type=${JSON.stringify(v.type)}, size=${v.size})`
+        : `${k}=${JSON.stringify(String(v).slice(0, 60))}`,
+    )
+    .join(" | ");
+  console.log(`[analyze] form: ${summary || "(empty)"}`);
+
   const file = form.get("file");
   if (!(file instanceof File)) {
+    console.warn(`[analyze] rejected: 'file' field is not a File — got ${typeof file} (${file === null ? "null" : "value"})`);
     return NextResponse.json(
-      { error: "unsupported_type", message: "Only PDF files are supported right now." },
+      {
+        error: "no_file",
+        message: "No file was attached to the request. Please reselect and try again.",
+      },
       { status: 400 },
     );
   }

@@ -1,12 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   ArrowRight,
   Check,
   ChevronDown,
+  CircleAlert,
   CircleCheck,
+  CircleX,
   ClipboardList,
   Clock,
   CloudUpload,
@@ -14,13 +16,12 @@ import {
   FileText,
   Loader,
   MessageCircle,
-  OctagonAlert,
   ShieldCheck,
   TriangleAlert,
-  X,
 } from "lucide-react";
 import LegalDisclaimer from "@/components/LegalDisclaimer";
-import { Logo } from "@/components/Logo";
+import Nav from "@/components/Nav";
+import QAPanel from "@/components/QAPanel";
 import type { AnalysisResult, ClauseItem } from "@/lib/types";
 
 type Stage =
@@ -28,7 +29,14 @@ type Stage =
   | { kind: "selected"; file: File }
   | { kind: "processing"; stageIndex: number }
   | { kind: "error"; message: string }
-  | { kind: "done"; analysis: AnalysisResult; filename: string };
+  | {
+      kind: "done";
+      analysis: AnalysisResult;
+      filename: string;
+      // Held in client state only — server never persists post-analysis (PRD §6.6).
+      // Sent back with each Q&A request so the server can answer without storage.
+      documentText: string;
+    };
 
 const MAX_BYTES = 10 * 1024 * 1024;
 
@@ -60,8 +68,6 @@ export default function AnalyzePage() {
     const file = stage.file;
 
     setStage({ kind: "processing", stageIndex: 0 });
-    // Advance through the 4 stages on a timer for perceived progress.
-    // Cap at the last stage — never wraps back to 0.
     const interval = window.setInterval(() => {
       setStage((s) => {
         if (s.kind !== "processing") return s;
@@ -75,7 +81,7 @@ export default function AnalyzePage() {
       form.append("file", file);
       const res = await fetch("/api/analyze", { method: "POST", body: form });
       const data = (await res.json()) as
-        | { analysis: AnalysisResult }
+        | { analysis: AnalysisResult; documentText: string }
         | { error: string; message: string };
 
       if (!res.ok || "error" in data) {
@@ -83,7 +89,12 @@ export default function AnalyzePage() {
         setStage({ kind: "error", message: msg });
         return;
       }
-      setStage({ kind: "done", analysis: data.analysis, filename: file.name });
+      setStage({
+        kind: "done",
+        analysis: data.analysis,
+        filename: file.name,
+        documentText: data.documentText,
+      });
     } catch {
       setStage({ kind: "error", message: "Something went wrong. Please try again." });
     } finally {
@@ -100,10 +111,7 @@ export default function AnalyzePage() {
 
   return (
     <>
-      <Nav
-        showFile={stage.kind === "done"}
-        filename={stage.kind === "done" ? stage.filename : undefined}
-      />
+      <Nav />
 
       <main className="mx-auto max-w-3xl px-6 pb-32 pt-8">
         <StepIndicator current={currentStep} />
@@ -117,13 +125,13 @@ export default function AnalyzePage() {
           />
         ) : null}
 
-        {stage.kind === "processing" && (
-          <ProcessingView stageIndex={stage.stageIndex} />
-        )}
+        {stage.kind === "processing" && <ProcessingView stageIndex={stage.stageIndex} />}
 
         {stage.kind === "done" && (
           <ResultsView
             analysis={stage.analysis}
+            filename={stage.filename}
+            documentText={stage.documentText}
             onReset={() => setStage({ kind: "idle" })}
           />
         )}
@@ -131,24 +139,6 @@ export default function AnalyzePage() {
 
       <LegalDisclaimer />
     </>
-  );
-}
-
-function Nav({ showFile, filename }: { showFile: boolean; filename?: string }) {
-  return (
-    <nav className="border-b border-ink-12 bg-cream/80 backdrop-blur">
-      <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-3">
-        <Link href="/" aria-label="KnowUrPolicy home">
-          <Logo size={20} />
-        </Link>
-        {showFile && filename && (
-          <div className="hidden min-w-0 flex-1 items-center justify-center px-4 text-xs font-medium text-navy-mid sm:flex">
-            <FileText className="mr-1.5 h-3.5 w-3.5 flex-none text-amber" />
-            <span className="truncate">{filename}</span>
-          </div>
-        )}
-      </div>
-    </nav>
   );
 }
 
@@ -161,25 +151,28 @@ function StepIndicator({ current }: { current: 1 | 2 | 3 }) {
   return (
     <ol className="mb-8 flex items-center justify-center gap-2 sm:gap-3" aria-label="Progress">
       {steps.map((step, i) => {
-        const isCurrent = step.n === current;
-        const isDone = step.n < current;
+        // Step 3 is the terminal step — once we're on it, the analysis is done.
+        // Treat it as completed (✓) so the stepper doesn't read as "still loading".
+        const isComplete = step.n < current || (step.n === 3 && current === 3);
+        const isCurrent = step.n === current && !isComplete;
+
         return (
           <li key={step.n} className="flex items-center gap-2 sm:gap-3">
             <span
-              aria-current={isCurrent ? "step" : undefined}
+              aria-current={step.n === current ? "step" : undefined}
               className={`flex h-6 w-6 flex-none items-center justify-center rounded-full text-[11px] font-semibold transition ${
-                isDone
+                isComplete
                   ? "bg-amber text-white"
                   : isCurrent
                     ? "bg-amber text-white ring-4 ring-amber/20"
                     : "bg-ink-12 text-navy-mid"
               }`}
             >
-              {isDone ? <Check className="h-3.5 w-3.5" /> : step.n}
+              {isComplete ? <Check className="h-3.5 w-3.5" /> : step.n}
             </span>
             <span
               className={`text-xs font-semibold ${
-                isCurrent || isDone ? "text-navy" : "text-navy-mid"
+                isCurrent || isComplete ? "text-navy" : "text-navy-mid"
               }`}
             >
               {step.label}
@@ -187,7 +180,7 @@ function StepIndicator({ current }: { current: 1 | 2 | 3 }) {
             {i < steps.length - 1 && (
               <span
                 className={`hidden h-px w-10 sm:block ${
-                  isDone ? "bg-amber" : "bg-ink-12"
+                  step.n < current ? "bg-amber" : "bg-ink-12"
                 }`}
               />
             )}
@@ -263,7 +256,6 @@ function UploadView({
         </div>
       </label>
 
-      {/* Anchor sentence per UX audit P0 — what you'll get back */}
       <p className="mt-3 text-center text-xs text-navy-mid">
         You&apos;ll get a clause-by-clause breakdown like{" "}
         <Link
@@ -306,7 +298,6 @@ function UploadView({
         </div>
       )}
 
-      {/* Privacy notice — green per design doc screen 2 */}
       <div className="mt-4 flex items-start gap-2.5 rounded-md border border-flag-g-text/30 bg-flag-g-bg px-3.5 py-3 text-xs leading-relaxed text-flag-g-text">
         <ShieldCheck className="mt-0.5 h-4 w-4 flex-none" />
         <div>
@@ -326,9 +317,7 @@ function UploadView({
           {selected ? "Analyse this document →" : "Select a file to continue"}
         </button>
         {selected && (
-          <p className="text-center text-xs text-navy-mid">
-            Takes ~30 seconds
-          </p>
+          <p className="text-center text-xs text-navy-mid">Takes ~30 seconds</p>
         )}
       </div>
     </section>
@@ -386,37 +375,35 @@ function ProcessingView({ stageIndex }: { stageIndex: number }) {
 
 function ResultsView({
   analysis,
+  filename,
+  documentText,
   onReset,
 }: {
   analysis: AnalysisResult;
+  filename: string;
+  documentText: string;
   onReset: () => void;
 }) {
-  const score = analysis.plain_english_score;
-  const scoreClass = (() => {
-    switch (score.label) {
-      case "Easy":
-        return "bg-flag-g-bg text-flag-g-text";
-      case "Moderate":
-        return "bg-flag-y-bg text-flag-y-text";
-      case "Complex":
-      case "Very Complex":
-        return "bg-flag-r-bg text-flag-r-text";
-    }
-  })();
+  const [qaOpen, setQaOpen] = useState(false);
+
+  // Red-flag count drives the "What next?" hook copy. Sourced from the two
+  // sections that carry red-flagged items.
+  const redCount = analysis.not_covered.length + analysis.watch_list.length;
 
   return (
-    <section className="space-y-4">
-      {/* Document header */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${scoreClass}`}
-        >
-          <FileText className="h-3.5 w-3.5" />
-          {score.label} — {score.score}/100
+    <section className="space-y-6">
+      {/* Document header — filename moved out of the nav so the nav can carry
+          its standard menu items. */}
+      <header className="border-b border-ink-12 pb-4">
+        <div className="flex items-center gap-2 text-sm font-semibold text-navy">
+          <FileText className="h-4 w-4 flex-none text-amber" />
+          <span className="truncate">{filename}</span>
         </div>
-      </div>
+      </header>
 
-      {/* Plain English Summary */}
+      <ComplexityCard score={analysis.plain_english_score} />
+
+      {/* Plain English summary */}
       <div className="rounded-lg border border-ink-12 bg-white p-5">
         <div className="text-xs font-semibold uppercase tracking-[0.08em] text-amber">
           Plain English summary
@@ -426,11 +413,30 @@ function ResultsView({
         </p>
       </div>
 
-      {/* Watch list first if it has items (PRD §6.3.3 — always expanded) */}
+      {/* Section order per UX-audit P0: positive baseline first, then risks.
+          What's covered → What's NOT covered → Watch list → Deadlines → Obligations.
+          Watch list is force-open since it's the highest-priority risk surface. */}
+      <AccordionSection
+        icon={<CircleCheck className="h-4 w-4 text-flag-g-text" />}
+        title="What's covered"
+        subtitle="What the document grants or includes."
+        tone="green"
+        items={analysis.covered}
+      />
+
+      <AccordionSection
+        icon={<CircleX className="h-4 w-4 text-flag-r-text" />}
+        title="What's NOT covered"
+        subtitle="Exclusions, gaps, and topics not addressed in this document."
+        tone="red"
+        items={analysis.not_covered}
+      />
+
       {analysis.watch_list.length > 0 && (
         <AccordionSection
           icon={<TriangleAlert className="h-4 w-4 text-flag-r-text" />}
           title="Watch list"
+          subtitle="Unusual or restrictive clauses — read carefully."
           tone="red"
           items={analysis.watch_list}
           forceOpen
@@ -438,15 +444,9 @@ function ResultsView({
       )}
 
       <AccordionSection
-        icon={<X className="h-4 w-4 text-flag-r-text" />}
-        title="What's NOT covered"
-        tone="red"
-        items={analysis.not_covered}
-      />
-
-      <AccordionSection
         icon={<Clock className="h-4 w-4 text-flag-y-text" />}
         title="Deadlines & limits"
+        subtitle="Time windows, caps, and notice periods."
         tone="yellow"
         items={analysis.deadlines_and_limits}
       />
@@ -454,96 +454,153 @@ function ResultsView({
       <AccordionSection
         icon={<ClipboardList className="h-4 w-4 text-flag-y-text" />}
         title="Your obligations"
+        subtitle="What you must do to keep the agreement valid."
         tone="yellow"
         items={analysis.your_obligations}
       />
 
-      <AccordionSection
-        icon={<CircleCheck className="h-4 w-4 text-flag-g-text" />}
-        title="What's covered"
-        tone="green"
-        items={analysis.covered}
+      <NextStepsBar
+        redCount={redCount}
+        onAsk={() => setQaOpen(true)}
+        onReset={onReset}
       />
 
-      {/* Post-analysis next-steps bar — UX audit P1 retention fix.
-          Three explicit next actions instead of a dead end. */}
-      <NextStepsBar onReset={onReset} />
+      <QAPanel
+        open={qaOpen}
+        onClose={() => setQaOpen(false)}
+        documentText={documentText}
+      />
     </section>
   );
 }
 
-function NextStepsBar({ onReset }: { onReset: () => void }) {
+function ComplexityCard({
+  score,
+}: {
+  score: AnalysisResult["plain_english_score"];
+}) {
+  const palette = (() => {
+    switch (score.label) {
+      case "Easy":
+        return {
+          chip: "bg-flag-g-bg text-flag-g-text",
+          accent: "text-flag-g-text",
+          border: "border-flag-g-text/30",
+        };
+      case "Moderate":
+        return {
+          chip: "bg-flag-y-bg text-flag-y-text",
+          accent: "text-flag-y-text",
+          border: "border-flag-y-border/40",
+        };
+      case "Complex":
+      case "Very Complex":
+        return {
+          chip: "bg-flag-r-bg text-flag-r-text",
+          accent: "text-flag-r-text",
+          border: "border-flag-r-text/30",
+        };
+    }
+  })();
+
   return (
-    <div className="mt-8 rounded-lg border border-ink-12 bg-white p-5">
-      <div className="text-xs font-semibold uppercase tracking-[0.08em] text-amber">
-        What next?
+    <div className={`flex items-center gap-5 rounded-lg border ${palette.border} bg-white p-5`}>
+      <div className="flex-none text-center">
+        <div className={`font-display text-5xl font-bold leading-none ${palette.accent}`}>
+          {score.score}
+        </div>
+        <div className="mt-1 text-[10px] font-medium uppercase tracking-wide text-navy-mid">
+          / 100
+        </div>
       </div>
-      <div className="mt-3 grid gap-2 sm:grid-cols-3">
-        <NextStepButton
-          icon={<MessageCircle className="h-4 w-4" />}
-          title="Ask a question"
-          subtitle="Coming this week"
-          disabled
-        />
-        <NextStepButton
-          icon={<Download className="h-4 w-4" />}
-          title="Export as PDF"
-          subtitle="Pro feature"
-          badge="Pro"
-          disabled
-        />
-        <NextStepButton
-          icon={<ArrowRight className="h-4 w-4" />}
-          title="Analyse another"
-          subtitle="Free"
-          onClick={onReset}
-        />
+      <div className="min-w-0 flex-1">
+        <div className="text-xs font-semibold uppercase tracking-[0.08em] text-amber">
+          Complexity
+        </div>
+        <div className={`mt-1 inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${palette.chip}`}>
+          {score.label}
+        </div>
+        <p className="mt-2 text-sm leading-relaxed text-navy">{score.note}</p>
       </div>
     </div>
   );
 }
 
-function NextStepButton({
-  icon,
-  title,
-  subtitle,
-  badge,
-  disabled,
-  onClick,
+function NextStepsBar({
+  redCount,
+  onAsk,
+  onReset,
 }: {
-  icon: React.ReactNode;
-  title: string;
-  subtitle: string;
-  badge?: string;
-  disabled?: boolean;
-  onClick?: () => void;
+  redCount: number;
+  onAsk: () => void;
+  onReset: () => void;
 }) {
+  const hook =
+    redCount === 0
+      ? "Document looks standard. Here's what to do next."
+      : `You have ${redCount} item${redCount === 1 ? "" : "s"} worth a closer look. Here's what to do next.`;
+
   return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className={`flex items-center gap-3 rounded-md border border-ink-12 bg-white p-3 text-left transition ${
-        disabled
-          ? "cursor-not-allowed opacity-60"
-          : "hover:border-amber hover:bg-amber-soft"
-      }`}
-    >
-      <span className="grid h-9 w-9 flex-none place-items-center rounded-md bg-amber-soft text-amber">
-        {icon}
-      </span>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm font-semibold text-navy">{title}</span>
-          {badge && (
-            <span className="rounded-full bg-amber px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-white">
-              {badge}
-            </span>
-          )}
-        </div>
-        <div className="text-xs text-navy-mid">{subtitle}</div>
+    <div className="mt-8 rounded-lg border border-ink-12 bg-white p-6">
+      <div className="text-xs font-semibold uppercase tracking-[0.08em] text-amber">
+        What next?
       </div>
-    </button>
+      <p className="mt-2 text-lg font-display font-bold text-navy">{hook}</p>
+
+      {/* Primary — full-width amber. Highest engagement moment, biggest button. */}
+      <button
+        type="button"
+        onClick={onAsk}
+        className="btn-primary mt-5 w-full !py-3.5 text-base"
+      >
+        <MessageCircle className="h-4 w-4" />
+        Ask a question about this document
+      </button>
+      <p className="mt-1.5 text-center text-xs text-navy-mid">
+        Answers come strictly from the document — no general knowledge.
+      </p>
+
+      {/* Secondary — Pro upgrade with price + benefit + amber border treatment */}
+      <div className="mt-5 rounded-lg border-2 border-amber bg-amber-soft/40 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="grid h-9 w-9 flex-none place-items-center rounded-md bg-amber text-white">
+              <Download className="h-4 w-4" />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-navy">Export as PDF</span>
+                <span className="rounded-full bg-amber px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-white">
+                  Pro
+                </span>
+              </div>
+              <div className="text-xs text-navy-mid">$9.99/month</div>
+            </div>
+          </div>
+        </div>
+        <p className="mt-3 text-sm text-navy">
+          Save the full analysis as a formatted PDF you can share with a
+          partner, lawyer, or anyone reviewing this document with you.
+        </p>
+        <Link
+          href="/#pricing"
+          className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-amber hover:underline"
+        >
+          Upgrade to Pro <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+
+      {/* Tertiary — analyse another, text link */}
+      <div className="mt-5 text-center">
+        <button
+          type="button"
+          onClick={onReset}
+          className="text-sm font-medium text-navy-mid hover:text-navy"
+        >
+          ← Analyse another document
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -555,12 +612,14 @@ function NextStepButton({
 function AccordionSection({
   icon,
   title,
+  subtitle,
   tone,
   items,
   forceOpen = false,
 }: {
   icon: React.ReactNode;
   title: string;
+  subtitle?: string;
   tone: "green" | "yellow" | "red";
   items: ClauseItem[];
   forceOpen?: boolean;
@@ -609,16 +668,23 @@ function AccordionSection({
       className="group overflow-hidden rounded-lg border border-ink-12 bg-white"
     >
       <summary
-        className={`flex cursor-pointer list-none items-center justify-between px-4 py-3 ${headerBg}`}
+        className={`flex cursor-pointer list-none items-center justify-between px-4 py-3 transition hover:brightness-95 ${headerBg}`}
       >
-        <div className="flex items-center gap-2 text-sm font-semibold text-navy">
-          {icon}
-          {title}
-          <span className={`ml-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${countChip}`}>
-            {items.length} {items.length === 1 ? "item" : "items"}
-          </span>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-sm font-semibold text-navy">
+            {icon}
+            {title}
+            <span className={`ml-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${countChip}`}>
+              {items.length} {items.length === 1 ? "item" : "items"}
+            </span>
+          </div>
+          {subtitle && (
+            <div className="mt-0.5 ml-6 text-[11px] text-navy-mid">
+              {subtitle}
+            </div>
+          )}
         </div>
-        <ChevronDown className="h-4 w-4 text-navy-mid transition group-open:rotate-180" />
+        <ChevronDown className="h-4 w-4 flex-none text-navy-mid transition group-open:rotate-180" />
       </summary>
       <ul className="space-y-2 bg-cream p-3">
         {items.map((item, i) => (
@@ -645,11 +711,12 @@ function ClauseListItem({
   const flagClass = { green: "flag-g", yellow: "flag-y", red: "flag-r" }[tone];
   const flagLabel = { green: "Standard", yellow: "Watch", red: "Red flag" }[tone];
 
-  // Icon reinforces colour for users with colour-vision deficiency — WCAG 1.4.1.
+  // Consistent circle-family icons across all three severities per UX-audit P2.
+  // Was previously mixing CircleCheck / AlertTriangle / OctagonAlert.
   const FlagIcon = {
     green: CircleCheck,
-    yellow: TriangleAlert,
-    red: OctagonAlert,
+    yellow: CircleAlert,
+    red: CircleX,
   }[tone];
 
   return (

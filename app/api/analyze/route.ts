@@ -56,7 +56,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const analysis = await analyseDocument(extracted.text);
-    return NextResponse.json({ analysis });
+    // Return the extracted document text alongside the analysis. The client
+    // holds it in session memory to power follow-up Q&A without re-uploading
+    // (per PRD §6.4). Server stays zero-retention (§6.6) — the text is not
+    // persisted anywhere, it just round-trips through the user's browser.
+    return NextResponse.json({ analysis, documentText: extracted.text });
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
     console.error(`[analyze] model failed for ${file.name}: ${detail}`);

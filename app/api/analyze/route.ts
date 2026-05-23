@@ -24,20 +24,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Debug-log every field so we can see exactly what the browser sent.
-  // Captured in Vercel logs as `[analyze] form: ...`.
-  const summary = Array.from(form.entries())
-    .map(([k, v]) =>
-      v instanceof File
-        ? `${k}=File(name=${JSON.stringify(v.name)}, type=${JSON.stringify(v.type)}, size=${v.size})`
-        : `${k}=${JSON.stringify(String(v).slice(0, 60))}`,
-    )
-    .join(" | ");
-  console.log(`[analyze] form: ${summary || "(empty)"}`);
-
   const file = form.get("file");
   if (!(file instanceof File)) {
-    console.warn(`[analyze] rejected: 'file' field is not a File — got ${typeof file} (${file === null ? "null" : "value"})`);
     return NextResponse.json(
       {
         error: "no_file",

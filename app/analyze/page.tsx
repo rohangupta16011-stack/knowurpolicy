@@ -81,9 +81,17 @@ export default function AnalyzePage() {
 
   // Accepts an explicit file so the retry-after-payment flow can re-trigger
   // analysis without depending on the current stage.
+  //
+  // IMPORTANT: defensively check that fileOverride is actually a File. When
+  // this was wired as `onClick={onAnalyse}` React was passing the synthetic
+  // click event as the first argument, which is truthy and was being treated
+  // as the file — FormData then stringified the event to "[object Object]"
+  // and the server rejected the upload.
   async function analyse(fileOverride?: File) {
+    const overrideFile =
+      fileOverride instanceof File ? fileOverride : undefined;
     const file =
-      fileOverride ??
+      overrideFile ??
       (stage.kind === "selected"
         ? stage.file
         : stage.kind === "payment_required"
@@ -400,7 +408,7 @@ function UploadView({
         <button
           type="button"
           disabled={!canSubmit}
-          onClick={onAnalyse}
+          onClick={() => onAnalyse()}
           className="btn-primary w-full text-base"
         >
           {!emailValid && !selected

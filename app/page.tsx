@@ -10,8 +10,9 @@ import {
   OctagonAlert,
   ShieldCheck,
 } from "lucide-react";
+import Footer from "@/components/Footer";
 import LegalDisclaimer from "@/components/LegalDisclaimer";
-import { Logo } from "@/components/Logo";
+import Nav from "@/components/Nav";
 import WaitlistForm from "@/components/WaitlistForm";
 import { FAQS, META_DESCRIPTION } from "@/lib/content";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
@@ -87,26 +88,6 @@ function StructuredData() {
   );
 }
 
-function Nav() {
-  return (
-    <nav className="border-b border-ink-12 bg-cream/80 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-        <Link href="/" aria-label="KnowUrPolicy home">
-          <Logo size={20} />
-        </Link>
-        <div className="hidden items-center gap-7 text-sm font-medium text-navy-mid sm:flex">
-          <a href="#features" className="hover:text-navy">How it works</a>
-          <a href="#pricing" className="hover:text-navy">Pricing</a>
-          <a href="#faq" className="hover:text-navy">FAQ</a>
-        </div>
-        <Link href="/analyze" className="btn-primary !py-1.5 !text-xs">
-          Try free
-        </Link>
-      </div>
-    </nav>
-  );
-}
-
 function Hero() {
   return (
     <section className="relative isolate overflow-hidden">
@@ -115,7 +96,7 @@ function Hero() {
 
       <div className="mx-auto max-w-3xl px-6 pb-16 pt-20 text-center sm:pt-28">
         <div className="text-xs font-semibold uppercase tracking-[0.18em] text-amber">
-          AI-powered document clarity
+          The fine print, decoded.
         </div>
 
         {/* Emphasis on 'before it's too late' (the anxiety trigger),
@@ -440,18 +421,3 @@ function FAQ() {
   );
 }
 
-function Footer() {
-  return (
-    <footer className="border-t border-ink-12 bg-white">
-      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 py-8 text-xs text-navy-mid sm:flex-row">
-        <Logo size={16} />
-        <span>© {new Date().getFullYear()} KnowUrPolicy. Built with care.</span>
-        <div className="flex items-center gap-5">
-          <a href="#" className="hover:text-navy">Privacy</a>
-          <a href="#" className="hover:text-navy">Terms</a>
-          <a href="#" className="hover:text-navy">Contact</a>
-        </div>
-      </div>
-    </footer>
-  );
-}

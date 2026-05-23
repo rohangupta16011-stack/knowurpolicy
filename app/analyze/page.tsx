@@ -58,7 +58,15 @@ export default function AnalyzePage() {
 
   function pickFile(file: File | null) {
     if (!file) return;
-    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+    // Accept anything ending in .pdf (case-insensitive) regardless of MIME,
+    // because cloud-storage / email attachments often arrive with
+    // application/octet-stream or empty type. If extension is missing, fall
+    // back to MIME containing "pdf". Real non-PDFs will fail cleanly later
+    // in the extraction step with a clearer error.
+    const filename = file.name.toLowerCase();
+    const mime = (file.type || "").toLowerCase();
+    const looksLikePdf = filename.endsWith(".pdf") || mime.includes("pdf");
+    if (!looksLikePdf) {
       setStage({ kind: "error", message: "Only PDF files are supported right now." });
       return;
     }

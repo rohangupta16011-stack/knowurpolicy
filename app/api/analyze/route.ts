@@ -69,11 +69,20 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-    return NextResponse.json(
-      { error: "unsupported_type", message: "Only PDF files are supported right now." },
-      { status: 400 },
-    );
+  // Permissive PDF detection — same logic as the client so we don't reject
+  // PDFs that arrive with non-standard MIME types (application/octet-stream
+  // and empty-string MIME are common with cloud-storage and email
+  // attachments). LlamaParse will catch genuine non-PDFs with a clearer
+  // extraction_failed error.
+  {
+    const filename = file.name.toLowerCase();
+    const mime = (file.type || "").toLowerCase();
+    if (!filename.endsWith(".pdf") && !mime.includes("pdf")) {
+      return NextResponse.json(
+        { error: "unsupported_type", message: "Only PDF files are supported right now." },
+        { status: 400 },
+      );
+    }
   }
 
   if (file.size > MAX_BYTES) {

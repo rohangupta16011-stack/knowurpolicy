@@ -73,8 +73,10 @@ function userMessageForExtractionFailure(reason: string): string {
     case "no_text_layer":
       return "This PDF appears to be a scanned image. We cannot analyse image-only files yet.";
     case "too_short":
-      return "This document is too short to analyse. Please upload the full policy document.";
+      return "This document is too short to analyse. Please upload the full document.";
     default:
-      return "We could not read this PDF. Please ensure it is not password-protected and try again.";
+      // "extraction_failed" — could be password-protected, corrupted, network
+      // issue with the extractor, or missing API key. Honest catch-all.
+      return "We couldn't extract text from this PDF. If it's password-protected, please remove the password and try again. Otherwise, please try again in a moment.";
   }
 }

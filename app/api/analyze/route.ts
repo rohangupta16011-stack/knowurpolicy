@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { analyseDocument } from "@/lib/claude";
 import { extractPdfText } from "@/lib/pdf-extract";
+import { isSupabaseConfigured, supabaseAdmin } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -37,10 +38,36 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  // TODO: enforce freemium gate against Supabase (`email_usage` table —
-  // first analysis free, charge after via Razorpay). For now we log so the
-  // captured emails aren't silently dropped.
   console.log(`[analyze] ${email} @ ${new Date().toISOString()} (${file.name}, ${file.size}B)`);
+
+  // Freemium gate — enforced only when Supabase is configured. Without it
+  // we let every upload through (degraded mode, useful in dev before
+  // Supabase is wired). With Supabase, atomic SQL function decides whether
+  // this is a free analysis, paid, or needs payment.
+  if (isSupabaseConfigured()) {
+    try {
+      const { data, error } = await supabaseAdmin().rpc(
+        "consume_analysis_credit",
+        { p_email: email },
+      );
+      if (error) {
+        // Don't block the user on a Supabase outage — log and proceed.
+        console.error(`[analyze] gate rpc failed: ${error.message}`);
+      } else if (data === "none") {
+        return NextResponse.json(
+          {
+            error: "payment_required",
+            message:
+              "Your free analysis has been used. Please pay for an additional analysis to continue.",
+          },
+          { status: 402 },
+        );
+      }
+      // else: "free" or "paid" — credit consumed, proceed to analyse
+    } catch (e) {
+      console.error(`[analyze] gate failed: ${e instanceof Error ? e.message : e}`);
+    }
+  }
 
   if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
     return NextResponse.json(

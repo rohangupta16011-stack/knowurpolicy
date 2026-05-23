@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  ArrowRight,
   Check,
   ChevronDown,
   CircleAlert,
@@ -12,7 +11,6 @@ import {
   ClipboardList,
   Clock,
   CloudUpload,
-  Download,
   FileText,
   Loader,
   MessageCircle,
@@ -21,6 +19,7 @@ import {
 } from "lucide-react";
 import LegalDisclaimer from "@/components/LegalDisclaimer";
 import Nav from "@/components/Nav";
+import PaymentButton from "@/components/PaymentButton";
 import QAPanel from "@/components/QAPanel";
 import type { AnalysisResult, ClauseItem } from "@/lib/types";
 
@@ -29,6 +28,7 @@ type Stage =
   | { kind: "selected"; file: File }
   | { kind: "processing"; stageIndex: number }
   | { kind: "error"; message: string }
+  | { kind: "payment_required"; file: File; message: string }
   | {
       kind: "done";
       analysis: AnalysisResult;
@@ -71,10 +71,17 @@ export default function AnalyzePage() {
 
   const emailValid = EMAIL_RE.test(email.trim());
 
-  async function analyse() {
-    if (stage.kind !== "selected") return;
-    if (!emailValid) return;
-    const file = stage.file;
+  // Accepts an explicit file so the retry-after-payment flow can re-trigger
+  // analysis without depending on the current stage.
+  async function analyse(fileOverride?: File) {
+    const file =
+      fileOverride ??
+      (stage.kind === "selected"
+        ? stage.file
+        : stage.kind === "payment_required"
+          ? stage.file
+          : null);
+    if (!file || !emailValid) return;
 
     setStage({ kind: "processing", stageIndex: 0 });
     const interval = window.setInterval(() => {
@@ -93,6 +100,13 @@ export default function AnalyzePage() {
       const data = (await res.json()) as
         | { analysis: AnalysisResult; documentText: string }
         | { error: string; message: string };
+
+      // 402 from the freemium gate — user has used their free analysis
+      // and has no paid credits. Surface a dedicated payment flow.
+      if (res.status === 402 && "error" in data) {
+        setStage({ kind: "payment_required", file, message: data.message });
+        return;
+      }
 
       if (!res.ok || "error" in data) {
         const msg = "error" in data ? data.message : "Something went wrong. Please try again.";
@@ -140,11 +154,22 @@ export default function AnalyzePage() {
 
         {stage.kind === "processing" && <ProcessingView stageIndex={stage.stageIndex} />}
 
+        {stage.kind === "payment_required" && (
+          <PaymentRequiredView
+            file={stage.file}
+            message={stage.message}
+            email={email}
+            onPaid={() => analyse(stage.file)}
+            onReset={() => setStage({ kind: "idle" })}
+          />
+        )}
+
         {stage.kind === "done" && (
           <ResultsView
             analysis={stage.analysis}
             filename={stage.filename}
             documentText={stage.documentText}
+            email={email}
             onReset={() => setStage({ kind: "idle" })}
           />
         )}
@@ -435,15 +460,78 @@ function ProcessingView({ stageIndex }: { stageIndex: number }) {
   );
 }
 
+function PaymentRequiredView({
+  file,
+  message,
+  email,
+  onPaid,
+  onReset,
+}: {
+  file: File;
+  message: string;
+  email: string;
+  onPaid: () => void;
+  onReset: () => void;
+}) {
+  return (
+    <section className="mx-auto max-w-md">
+      <div className="rounded-lg border border-amber bg-amber-soft/40 p-6">
+        <div className="text-xs font-semibold uppercase tracking-[0.08em] text-amber">
+          Free analysis used
+        </div>
+        <p className="mt-2 font-display text-xl font-bold text-navy">
+          {message}
+        </p>
+
+        <div className="mt-4 flex items-center gap-3 rounded-md border border-ink-12 bg-white px-3 py-2.5 text-sm">
+          <span className="grid h-8 w-8 flex-none place-items-center rounded-md bg-amber-soft text-[10px] font-bold text-amber">
+            PDF
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-semibold text-navy">{file.name}</div>
+            <div className="text-xs text-navy-mid">
+              {(file.size / 1024 / 1024).toFixed(2)} MB · ready to analyse
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5">
+          <PaymentButton
+            email={email}
+            label="Pay & analyse"
+            onSuccess={onPaid}
+          />
+        </div>
+
+        <p className="mt-4 text-center text-xs text-navy-mid">
+          Region-aware price · Razorpay handles the payment
+        </p>
+      </div>
+
+      <div className="mt-5 text-center">
+        <button
+          type="button"
+          onClick={onReset}
+          className="text-sm font-medium text-navy-mid hover:text-navy"
+        >
+          ← Start over
+        </button>
+      </div>
+    </section>
+  );
+}
+
 function ResultsView({
   analysis,
   filename,
   documentText,
+  email,
   onReset,
 }: {
   analysis: AnalysisResult;
   filename: string;
   documentText: string;
+  email: string;
   onReset: () => void;
 }) {
   const [qaOpen, setQaOpen] = useState(false);
@@ -523,6 +611,7 @@ function ResultsView({
 
       <NextStepsBar
         redCount={redCount}
+        email={email}
         onAsk={() => setQaOpen(true)}
         onReset={onReset}
       />
@@ -590,10 +679,12 @@ function ComplexityCard({
 
 function NextStepsBar({
   redCount,
+  email,
   onAsk,
   onReset,
 }: {
   redCount: number;
+  email: string;
   onAsk: () => void;
   onReset: () => void;
 }) {
@@ -622,34 +713,20 @@ function NextStepsBar({
         Answers come strictly from the document — no general knowledge.
       </p>
 
-      {/* Secondary — Pro upgrade with price + benefit + amber border treatment */}
+      {/* Secondary — buy another analysis via Razorpay. Region-aware price
+          is resolved server-side at order-creation time. */}
       <div className="mt-5 rounded-lg border-2 border-amber bg-amber-soft/40 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="grid h-9 w-9 flex-none place-items-center rounded-md bg-amber text-white">
-              <Download className="h-4 w-4" />
-            </span>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-navy">Export as PDF</span>
-                <span className="rounded-full bg-amber px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-white">
-                  Pro
-                </span>
-              </div>
-              <div className="text-xs text-navy-mid">$9.99/month</div>
-            </div>
-          </div>
+        <div className="text-sm font-semibold text-navy">
+          Got another document?
         </div>
-        <p className="mt-3 text-sm text-navy">
-          Save the full analysis as a formatted PDF you can share with a
-          partner, lawyer, or anyone reviewing this document with you.
+        <p className="mt-1 text-sm text-navy-mid">
+          Your first analysis is free. Each additional analysis is paid at the
+          rate shown for your region (₹99 in India, $2.99 in US/EU, $1.49
+          elsewhere).
         </p>
-        <Link
-          href="/#pricing"
-          className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-amber hover:underline"
-        >
-          Upgrade to Pro <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
+        <div className="mt-4">
+          <PaymentButton email={email} label="Buy another analysis" />
+        </div>
       </div>
 
       {/* Tertiary — analyse another, text link */}

@@ -126,6 +126,77 @@ create trigger set_updated_at
 
 
 -- =============================================================================
+-- RPC functions — atomic credit operations
+-- =============================================================================
+-- Called from the server (with service-role key) from /api/payment/verify and
+-- /api/analyze. Atomic so concurrent requests can't double-grant or
+-- double-decrement.
+
+-- Grant N paid credits to an email. Upserts if the email is new.
+-- Returns the new total credits.
+create or replace function grant_paid_credits(
+  p_email text,
+  p_amount int default 1
+)
+returns int
+language plpgsql
+security definer
+as $$
+declare
+  v_new_total int;
+begin
+  insert into email_usage (email, paid_credits)
+  values (p_email, p_amount)
+  on conflict (email) do update
+    set paid_credits = email_usage.paid_credits + p_amount
+  returning email_usage.paid_credits into v_new_total;
+  return v_new_total;
+end;
+$$;
+
+-- Try to consume one analysis credit. Returns:
+--   'free'  — free analysis granted (was unused, now marked used)
+--   'paid'  — paid credit decremented
+--   'none'  — no free, no credits, needs payment
+-- Increments total_analyses + sets last_analysis_at on success.
+create or replace function consume_analysis_credit(
+  p_email text
+)
+returns text
+language plpgsql
+security definer
+as $$
+declare
+  v_row email_usage%rowtype;
+begin
+  -- Ensure row exists with locking for the update
+  insert into email_usage (email) values (p_email)
+  on conflict (email) do nothing;
+
+  select * into v_row from email_usage where email = p_email for update;
+
+  if not v_row.free_used then
+    update email_usage
+      set free_used = true,
+          total_analyses = total_analyses + 1,
+          last_analysis_at = now()
+      where email = p_email;
+    return 'free';
+  elsif v_row.paid_credits > 0 then
+    update email_usage
+      set paid_credits = paid_credits - 1,
+          total_analyses = total_analyses + 1,
+          last_analysis_at = now()
+      where email = p_email;
+    return 'paid';
+  else
+    return 'none';
+  end if;
+end;
+$$;
+
+
+-- =============================================================================
 -- Row Level Security — deny by default
 -- =============================================================================
 -- No policies means anon-key requests get zero rows. Server uses service-role

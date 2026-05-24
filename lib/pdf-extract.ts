@@ -59,6 +59,11 @@ async function uploadJob(
   new Uint8Array(ab).set(buffer);
   form.append("file", new Blob([ab], { type: "application/pdf" }), filename);
   form.append("result_type", "markdown");
+  // Fast mode — skips the LLM-based parser that adds 15-30s per request.
+  // We were hitting Vercel's 60s function cap. Trade-off: weaker handling of
+  // complex tables / forms, but the text-layer extraction is unchanged so
+  // ordinary policies / contracts come through fine.
+  form.append("parse_mode", "parse_page_without_llm");
 
   const res = await fetch(`${LLAMAPARSE_BASE}/upload`, {
     method: "POST",
@@ -73,7 +78,9 @@ async function uploadJob(
 }
 
 async function waitForJob(jobId: string, apiKey: string): Promise<void> {
-  const deadline = Date.now() + 45_000; // PRD §6.2 — 45s soft limit
+  // 25s budget for parsing. Fast mode usually returns in 3-8s; this leaves
+  // ~30s for Claude inside the function's 60s Vercel cap.
+  const deadline = Date.now() + 25_000;
   while (Date.now() < deadline) {
     const res = await fetch(`${LLAMAPARSE_BASE}/job/${jobId}`, {
       headers: { Authorization: `Bearer ${apiKey}` },

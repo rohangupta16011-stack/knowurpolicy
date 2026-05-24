@@ -176,23 +176,41 @@ function Section({
 }) {
   if (items.length === 0) return null;
   const t = toneStyle(tone);
+  const [firstItem, ...rest] = items;
+
   return (
-    <View wrap={false}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        <Text style={[styles.sectionCount, { backgroundColor: t.bg, color: t.text }]}>
-          {items.length} {items.length === 1 ? "item" : "items"}
-        </Text>
-      </View>
-      {items.map((item, i) => (
-        <View key={i} style={styles.clauseCard} wrap={false}>
-          <View style={[styles.stripe, { backgroundColor: t.stripe }]} />
-          <View style={styles.clauseBody}>
-            <Text style={styles.clauseTitle}>{item.title}</Text>
-            <Text style={styles.clauseText}>{item.explanation}</Text>
-          </View>
+    // Outer view MUST allow wrapping — when a section has 10+ items they need
+    // to flow across pages. Previously this was wrap={false} and react-pdf
+    // collapsed the layout, causing card titles + bodies to overlap.
+    <View>
+      {/* Keep section header glued to the first item so the header never
+          gets orphaned at the bottom of a page. */}
+      <View wrap={false}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{title}</Text>
+          <Text style={[styles.sectionCount, { backgroundColor: t.bg, color: t.text }]}>
+            {items.length} {items.length === 1 ? "item" : "items"}
+          </Text>
         </View>
+        <ClauseCard item={firstItem} stripe={t.stripe} />
+      </View>
+      {rest.map((item, i) => (
+        <ClauseCard key={i} item={item} stripe={t.stripe} />
       ))}
+    </View>
+  );
+}
+
+function ClauseCard({ item, stripe }: { item: ClauseItem; stripe: string }) {
+  return (
+    <View style={styles.clauseCard} wrap={false}>
+      <View style={[styles.stripe, { backgroundColor: stripe }]} />
+      <View style={styles.clauseBody}>
+        <Text style={styles.clauseTitle}>{item.title}</Text>
+        {item.explanation ? (
+          <Text style={styles.clauseText}>{item.explanation}</Text>
+        ) : null}
+      </View>
     </View>
   );
 }

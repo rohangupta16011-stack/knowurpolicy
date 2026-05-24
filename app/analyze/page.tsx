@@ -22,8 +22,16 @@ import LegalDisclaimer from "@/components/LegalDisclaimer";
 import Nav from "@/components/Nav";
 import PaymentButton from "@/components/PaymentButton";
 import QAPanel from "@/components/QAPanel";
+import SignInPrompt from "@/components/SignInPrompt";
+import { isSupabaseBrowserConfigured, supabaseBrowser } from "@/lib/supabase";
 import type { PricingTier } from "@/lib/pricing";
 import type { AnalysisResult, ClauseItem } from "@/lib/types";
+
+type AuthState =
+  | { kind: "loading" }
+  | { kind: "signed_out" }
+  | { kind: "signed_in"; email: string }
+  | { kind: "skipped" }; // Supabase not configured — degraded mode, no auth gate
 
 type Stage =
   | { kind: "idle" }
@@ -57,7 +65,61 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export default function AnalyzePage() {
   const [stage, setStage] = useState<Stage>({ kind: "idle" });
   // Email survives across re-analyses (user enters once, keeps going).
+  // When signed in via Google, this is auto-populated from the profile and
+  // the manual email input is hidden in UploadView.
   const [email, setEmail] = useState("");
+
+  const supabaseConfigured = isSupabaseBrowserConfigured();
+  const [auth, setAuth] = useState<AuthState>(
+    supabaseConfigured ? { kind: "loading" } : { kind: "skipped" },
+  );
+
+  // Watch Supabase auth state. When signed in, mirror the Google profile
+  // email into the page state so the rest of the flow (analysis, payment,
+  // Q&A) keys off the verified identity instead of a manual entry.
+  useEffect(() => {
+    if (!supabaseConfigured) return;
+    const supabase = supabaseBrowser();
+    let cancelled = false;
+
+    supabase.auth.getUser().then(({ data }) => {
+      if (cancelled) return;
+      const userEmail = data.user?.email;
+      if (userEmail) {
+        setAuth({ kind: "signed_in", email: userEmail });
+        setEmail(userEmail);
+      } else {
+        setAuth({ kind: "signed_out" });
+      }
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      const userEmail = session?.user?.email;
+      if (userEmail) {
+        setAuth({ kind: "signed_in", email: userEmail });
+        setEmail(userEmail);
+      } else {
+        setAuth({ kind: "signed_out" });
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+  }, [supabaseConfigured]);
+
+  async function handleSignOut() {
+    if (!supabaseConfigured) return;
+    try {
+      await supabaseBrowser().auth.signOut();
+      // Reset client state so the next user doesn't inherit anything.
+      setEmail("");
+      setStage({ kind: "idle" });
+    } catch (e) {
+      console.error("Sign-out failed", e);
+    }
+  }
 
   function pickFile(file: File | null) {
     if (!file) return;
@@ -153,11 +215,66 @@ export default function AnalyzePage() {
         ? 2
         : 3;
 
+  // Auth gate — only renders the upload flow once signed in (or when
+  // Supabase isn't configured, falling back to manual-email mode).
+  if (auth.kind === "loading") {
+    return (
+      <>
+        <Nav />
+        <main className="mx-auto flex max-w-3xl items-center justify-center px-6 py-24">
+          <Loader className="h-5 w-5 animate-spin text-amber" />
+        </main>
+      </>
+    );
+  }
+
+  if (auth.kind === "signed_out") {
+    return (
+      <>
+        <Nav />
+        <main className="mx-auto max-w-md px-6 pb-32 pt-8">
+          <StepIndicator current={1} />
+          <header className="mt-2">
+            <h1 className="font-display text-3xl font-bold text-navy">
+              Understand what you&apos;re signing
+            </h1>
+            <p className="mt-1.5 text-sm text-navy-mid">
+              Upload any policy, contract, or legal document and get a
+              plain-English breakdown in 30 seconds. Your first analysis is on
+              us.
+            </p>
+          </header>
+          <div className="mt-7">
+            <SignInPrompt redirectNext="/analyze" />
+          </div>
+        </main>
+        <LegalDisclaimer />
+      </>
+    );
+  }
+
+  const signedIn = auth.kind === "signed_in";
+
   return (
     <>
       <Nav />
 
       <main className="mx-auto max-w-3xl px-6 pb-32 pt-8">
+        {signedIn && (
+          <div className="mb-4 flex items-center justify-end gap-3 text-xs text-navy-mid">
+            <span>
+              Signed in as <strong className="text-navy">{auth.email}</strong>
+            </span>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="font-medium text-amber hover:underline"
+            >
+              Sign out
+            </button>
+          </div>
+        )}
+
         <StepIndicator current={currentStep} />
 
         {stage.kind === "idle" || stage.kind === "selected" || stage.kind === "error" ? (
@@ -165,6 +282,7 @@ export default function AnalyzePage() {
             stage={stage}
             email={email}
             emailValid={emailValid}
+            emailLocked={signedIn}
             onEmailChange={setEmail}
             onPick={pickFile}
             onAnalyse={analyse}
@@ -254,6 +372,7 @@ function UploadView({
   stage,
   email,
   emailValid,
+  emailLocked,
   onEmailChange,
   onPick,
   onAnalyse,
@@ -262,6 +381,9 @@ function UploadView({
   stage: Stage;
   email: string;
   emailValid: boolean;
+  /** True when the email is sourced from the auth session (Google profile)
+   *  and the user shouldn't be editing it. Hides the email input. */
+  emailLocked: boolean;
   onEmailChange: (v: string) => void;
   onPick: (f: File | null) => void;
   onAnalyse: () => void;
@@ -286,39 +408,42 @@ function UploadView({
         </p>
       </header>
 
-      {/* Email gate — required before analysis. We collect it so users can
-          come back to their analyses and so we can enforce the free-first
-          freemium gate per PRD §6.5. */}
-      <div className="mt-6">
-        <label
-          htmlFor="email"
-          className="block text-xs font-semibold uppercase tracking-[0.08em] text-navy"
-        >
-          Your email
-        </label>
-        <input
-          id="email"
-          type="email"
-          required
-          autoComplete="email"
-          placeholder="you@company.com"
-          value={email}
-          onChange={(e) => onEmailChange(e.target.value)}
-          onBlur={() => setEmailTouched(true)}
-          aria-invalid={emailHasError}
-          aria-describedby="email-help"
-          className={`mt-1.5 w-full rounded-md border bg-white px-3 py-2.5 text-sm text-navy placeholder:text-navy-mid focus:outline-none focus:ring-2 ${
-            emailHasError
-              ? "border-flag-r-text focus:border-flag-r-text focus:ring-flag-r-text/30"
-              : "border-ink-22 focus:border-amber focus:ring-amber/30"
-          }`}
-        />
-        <p id="email-help" className="mt-1.5 text-xs text-navy-mid">
-          {emailHasError
-            ? "Please enter a valid email address."
-            : "We use this to give you 1 free analysis. No spam."}
-        </p>
-      </div>
+      {/* Email gate — when signed in, the email is supplied by the auth
+          session and the manual input is hidden. When Supabase isn't
+          configured (degraded mode) the input falls back to the original
+          manual entry. */}
+      {!emailLocked && (
+        <div className="mt-6">
+          <label
+            htmlFor="email"
+            className="block text-xs font-semibold uppercase tracking-[0.08em] text-navy"
+          >
+            Your email
+          </label>
+          <input
+            id="email"
+            type="email"
+            required
+            autoComplete="email"
+            placeholder="you@company.com"
+            value={email}
+            onChange={(e) => onEmailChange(e.target.value)}
+            onBlur={() => setEmailTouched(true)}
+            aria-invalid={emailHasError}
+            aria-describedby="email-help"
+            className={`mt-1.5 w-full rounded-md border bg-white px-3 py-2.5 text-sm text-navy placeholder:text-navy-mid focus:outline-none focus:ring-2 ${
+              emailHasError
+                ? "border-flag-r-text focus:border-flag-r-text focus:ring-flag-r-text/30"
+                : "border-ink-22 focus:border-amber focus:ring-amber/30"
+            }`}
+          />
+          <p id="email-help" className="mt-1.5 text-xs text-navy-mid">
+            {emailHasError
+              ? "Please enter a valid email address."
+              : "We use this to give you 1 free analysis. No spam."}
+          </p>
+        </div>
+      )}
 
       <label
         htmlFor="pdf"

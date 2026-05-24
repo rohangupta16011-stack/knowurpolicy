@@ -24,6 +24,7 @@ import PaymentButton from "@/components/PaymentButton";
 import QAPanel from "@/components/QAPanel";
 import SignInPrompt from "@/components/SignInPrompt";
 import { isSupabaseBrowserConfigured, supabaseBrowser } from "@/lib/supabase";
+import type { PricingTier } from "@/lib/pricing";
 import type { AnalysisResult, ClauseItem } from "@/lib/types";
 
 type Stage =
@@ -39,6 +40,7 @@ type Stage =
       // Held in client state only — server never persists post-analysis (PRD §6.6).
       // Sent back with each Q&A request so the server can answer without storage.
       documentText: string;
+      pricing: PricingTier;
     };
 
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -52,6 +54,7 @@ type AnalysisStash = {
   filename: string;
   documentText: string;
   email: string;
+  pricing: PricingTier;
   /** True when the stash was written specifically to trigger a download after sign-in. */
   triggerDownload?: boolean;
 };
@@ -115,6 +118,7 @@ export default function AnalyzePage() {
         analysis: stash.analysis,
         filename: stash.filename,
         documentText: stash.documentText,
+        pricing: stash.pricing,
       });
       setEmail(stash.email);
       setAutoDownloadAfterAuth(Boolean(stash.triggerDownload));
@@ -186,7 +190,7 @@ export default function AnalyzePage() {
       form.append("email", email.trim().toLowerCase());
       const res = await fetch("/api/analyze", { method: "POST", body: form });
       const data = (await res.json()) as
-        | { analysis: AnalysisResult; documentText: string }
+        | { analysis: AnalysisResult; documentText: string; pricing: PricingTier }
         | { error: string; message: string };
 
       // 402 from the freemium gate — user has used their free analysis
@@ -206,6 +210,7 @@ export default function AnalyzePage() {
         analysis: data.analysis,
         filename: file.name,
         documentText: data.documentText,
+        pricing: data.pricing,
       });
     } catch {
       setStage({ kind: "error", message: "Something went wrong. Please try again." });
@@ -258,6 +263,7 @@ export default function AnalyzePage() {
             filename={stage.filename}
             documentText={stage.documentText}
             email={email}
+            pricing={stage.pricing}
             autoDownloadAfterAuth={autoDownloadAfterAuth}
             onAutoDownloadConsumed={() => setAutoDownloadAfterAuth(false)}
             onReset={() => setStage({ kind: "idle" })}
@@ -616,6 +622,7 @@ function ResultsView({
   filename,
   documentText,
   email,
+  pricing,
   autoDownloadAfterAuth,
   onAutoDownloadConsumed,
   onReset,
@@ -624,6 +631,7 @@ function ResultsView({
   filename: string;
   documentText: string;
   email: string;
+  pricing: PricingTier;
   autoDownloadAfterAuth: boolean;
   onAutoDownloadConsumed: () => void;
   onReset: () => void;
@@ -709,6 +717,7 @@ function ResultsView({
         analysis={analysis}
         filename={filename}
         documentText={documentText}
+        pricing={pricing}
         autoDownloadAfterAuth={autoDownloadAfterAuth}
         onAutoDownloadConsumed={onAutoDownloadConsumed}
         onAsk={() => setQaOpen(true)}
@@ -782,6 +791,7 @@ function NextStepsBar({
   analysis,
   filename,
   documentText,
+  pricing,
   autoDownloadAfterAuth,
   onAutoDownloadConsumed,
   onAsk,
@@ -792,6 +802,7 @@ function NextStepsBar({
   analysis: AnalysisResult;
   filename: string;
   documentText: string;
+  pricing: PricingTier;
   autoDownloadAfterAuth: boolean;
   onAutoDownloadConsumed: () => void;
   onAsk: () => void;
@@ -828,23 +839,28 @@ function NextStepsBar({
         analysis={analysis}
         filename={filename}
         documentText={documentText}
+        pricing={pricing}
         autoDownloadAfterAuth={autoDownloadAfterAuth}
         onAutoDownloadConsumed={onAutoDownloadConsumed}
       />
 
-      {/* Secondary — buy another analysis via Razorpay. Region-aware price
-          is resolved server-side at order-creation time. */}
+      {/* Secondary — buy another analysis via Razorpay. Only the user's
+          region price is shown (detected server-side from the edge); the
+          full price grid lives on /terms for the legal record. */}
       <div className="mt-5 rounded-lg border-2 border-amber bg-amber-soft/40 p-4">
         <div className="text-sm font-semibold text-navy">
           Got another document?
         </div>
         <p className="mt-1 text-sm text-navy-mid">
-          Your first analysis is free. Each additional analysis is paid at the
-          rate shown for your region (₹99 in India, $2.99 in US/EU, $1.49
-          elsewhere).
+          Your first analysis is free. Each additional analysis is{" "}
+          <strong className="text-navy">{pricing.perDocDisplay}</strong>,
+          charged in {pricing.currency}.
         </p>
         <div className="mt-4">
-          <PaymentButton email={email} label="Buy another analysis" />
+          <PaymentButton
+            email={email}
+            label={`Buy another analysis · ${pricing.perDocDisplay}`}
+          />
         </div>
       </div>
 
@@ -877,6 +893,7 @@ function DownloadCard({
   analysis,
   filename,
   documentText,
+  pricing,
   autoDownloadAfterAuth,
   onAutoDownloadConsumed,
 }: {
@@ -884,6 +901,7 @@ function DownloadCard({
   analysis: AnalysisResult;
   filename: string;
   documentText: string;
+  pricing: PricingTier;
   autoDownloadAfterAuth: boolean;
   onAutoDownloadConsumed: () => void;
 }) {
@@ -996,6 +1014,7 @@ function DownloadCard({
       filename,
       documentText,
       email,
+      pricing,
       triggerDownload: true,
     });
   }
@@ -1063,6 +1082,7 @@ function DownloadCard({
             <PaymentButton
               email={email}
               product="download"
+              label={`Pay ${pricing.downloadPerDocDisplay} & download`}
               successHidden
               onSuccess={(res) => {
                 if (res.downloadToken) fetchAndSavePdf(res.downloadToken);
@@ -1075,6 +1095,7 @@ function DownloadCard({
           <PaymentButton
             email={email}
             product="download"
+            label={`Pay ${pricing.downloadPerDocDisplay} & download`}
             successHidden
             onSuccess={(res) => {
               if (res.downloadToken) fetchAndSavePdf(res.downloadToken);

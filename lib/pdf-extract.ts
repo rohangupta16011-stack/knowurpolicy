@@ -99,12 +99,29 @@ async function waitForJob(jobId: string, apiKey: string): Promise<void> {
 }
 
 async function fetchResult(jobId: string, apiKey: string): Promise<string> {
-  const res = await fetch(`${LLAMAPARSE_BASE}/job/${jobId}/result/markdown`, {
-    headers: { Authorization: `Bearer ${apiKey}` },
-  });
-  if (!res.ok) {
-    throw new Error(`llamaparse result ${res.status}`);
+  // Fast mode (parse_page_without_llm) doesn't generate markdown, so the
+  // /result/markdown endpoint 404s. Try markdown first, fall back to text,
+  // so this keeps working whichever parse mode is set on upload.
+  const headers = { Authorization: `Bearer ${apiKey}` };
+
+  const mdRes = await fetch(
+    `${LLAMAPARSE_BASE}/job/${jobId}/result/markdown`,
+    { headers },
+  );
+  if (mdRes.ok) {
+    const data = (await mdRes.json()) as { markdown?: string };
+    if (data.markdown) return data.markdown;
+  } else if (mdRes.status !== 404) {
+    throw new Error(`llamaparse result ${mdRes.status}`);
   }
-  const data = (await res.json()) as { markdown: string };
-  return data.markdown ?? "";
+
+  const txtRes = await fetch(
+    `${LLAMAPARSE_BASE}/job/${jobId}/result/text`,
+    { headers },
+  );
+  if (!txtRes.ok) {
+    throw new Error(`llamaparse text ${txtRes.status}`);
+  }
+  const txtData = (await txtRes.json()) as { text?: string };
+  return txtData.text ?? "";
 }

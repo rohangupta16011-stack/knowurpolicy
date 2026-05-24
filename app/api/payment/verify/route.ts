@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { issueDownloadToken } from "@/lib/download-token";
 import { verifyCheckoutSignature } from "@/lib/razorpay";
 import { isSupabaseConfigured, supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -11,6 +12,8 @@ type VerifyBody = {
   razorpay_payment_id?: string;
   razorpay_signature?: string;
   email?: string;
+  /** "analysis" (default) or "download" */
+  product?: string;
 };
 
 export async function POST(req: NextRequest) {
@@ -19,6 +22,7 @@ export async function POST(req: NextRequest) {
   const paymentId = body?.razorpay_payment_id;
   const signature = body?.razorpay_signature;
   const email = body?.email?.trim().toLowerCase();
+  const product = body?.product === "download" ? "download" : "analysis";
 
   if (!orderId || !paymentId || !signature) {
     return NextResponse.json(
@@ -33,9 +37,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // CRITICAL: verify the signature before doing anything else. Without this
-  // check anyone could call /api/payment/verify with arbitrary ids and grant
-  // themselves credits.
+  // Verify the Checkout signature FIRST. Without this guard anyone could
+  // POST arbitrary ids and grant themselves a download token or credit.
   const valid = verifyCheckoutSignature({
     razorpayOrderId: orderId,
     razorpayPaymentId: paymentId,
@@ -50,35 +53,41 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Grant the credit. If Supabase isn't configured we still return ok so the
-  // checkout flow completes in dev; the credit just won't be enforced.
+  // Update the payment row (best-effort — webhook is the source of truth)
   if (isSupabaseConfigured()) {
     try {
       const supabase = supabaseAdmin();
-
-      // Update the payment row (best-effort — webhook is the source of truth)
       await supabase
         .from("payments")
-        .update({
-          razorpay_payment_id: paymentId,
-          status: "captured",
-        })
+        .update({ razorpay_payment_id: paymentId, status: "captured" })
         .eq("razorpay_order_id", orderId);
+    } catch (e) {
+      console.error(`[payment/verify] supabase update failed: ${e instanceof Error ? e.message : e}`);
+    }
+  }
 
-      // Grant 1 paid credit atomically
-      const { error } = await supabase.rpc("grant_paid_credits", {
+  if (product === "download") {
+    // Issue a short-lived signed token bound to this email. The client uses
+    // it to authenticate the immediate /api/download/pdf call. No DB row —
+    // the user pays, downloads, done.
+    const downloadToken = issueDownloadToken(email);
+    return NextResponse.json({ ok: true, product: "download", downloadToken });
+  }
+
+  // Analysis credit — grant via Supabase RPC if available.
+  if (isSupabaseConfigured()) {
+    try {
+      const { error } = await supabaseAdmin().rpc("grant_paid_credits", {
         p_email: email,
         p_amount: 1,
       });
       if (error) {
         console.error(`[payment/verify] grant_paid_credits failed: ${error.message}`);
-        // Don't return 500 to the client — the payment succeeded; the
-        // webhook will redo this from the source of truth.
       }
     } catch (e) {
       console.error(`[payment/verify] supabase failed: ${e instanceof Error ? e.message : e}`);
     }
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, product: "analysis" });
 }

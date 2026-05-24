@@ -13,12 +13,17 @@ export type PricingTier = {
   tier: "tier1" | "tier2" | "tier3";
   currency: "USD" | "INR";
   symbol: "$" | "₹";
-  /** numeric price per document, in the currency above */
+  /** numeric price per document analysis, in the currency above */
   perDoc: number;
   /** formatted price for display, e.g. "$2.99" or "₹99" */
   perDocDisplay: string;
   /** equivalent in USD, for backend reconciliation */
   perDocUsdEquivalent: number;
+  /** PDF download price — must be ≥ Razorpay minimum (100 smallest units)
+   *  and < perDoc */
+  downloadPerDoc: number;
+  /** formatted download price, e.g. "$1.49" or "₹49" */
+  downloadPerDocDisplay: string;
 };
 
 const TIER1_USD: PricingTier = {
@@ -28,6 +33,8 @@ const TIER1_USD: PricingTier = {
   perDoc: 2.99,
   perDocDisplay: "$2.99",
   perDocUsdEquivalent: 2.99,
+  downloadPerDoc: 1.49, // half of analysis
+  downloadPerDocDisplay: "$1.49",
 };
 
 const TIER2_INR: PricingTier = {
@@ -37,6 +44,8 @@ const TIER2_INR: PricingTier = {
   perDoc: 99,
   perDocDisplay: "₹99",
   perDocUsdEquivalent: 1.19, // ~₹83/USD as of 2026
+  downloadPerDoc: 49, // half of analysis
+  downloadPerDocDisplay: "₹49",
 };
 
 const TIER3_USD: PricingTier = {
@@ -46,6 +55,9 @@ const TIER3_USD: PricingTier = {
   perDoc: 1.49,
   perDocDisplay: "$1.49",
   perDocUsdEquivalent: 1.49,
+  // Can't go below $1.00 — Razorpay minimum is 100 cents.
+  downloadPerDoc: 1.0,
+  downloadPerDocDisplay: "$1.00",
 };
 
 // Tier 1: developed markets that bear full USD pricing.

@@ -11,6 +11,7 @@ import {
   ClipboardList,
   Clock,
   CloudUpload,
+  Download,
   FileText,
   Loader,
   MessageCircle,
@@ -628,6 +629,8 @@ function ResultsView({
       <NextStepsBar
         redCount={redCount}
         email={email}
+        analysis={analysis}
+        filename={filename}
         onAsk={() => setQaOpen(true)}
         onReset={onReset}
       />
@@ -696,11 +699,15 @@ function ComplexityCard({
 function NextStepsBar({
   redCount,
   email,
+  analysis,
+  filename,
   onAsk,
   onReset,
 }: {
   redCount: number;
   email: string;
+  analysis: AnalysisResult;
+  filename: string;
   onAsk: () => void;
   onReset: () => void;
 }) {
@@ -729,6 +736,9 @@ function NextStepsBar({
         Answers come strictly from the document — no general knowledge.
       </p>
 
+      {/* Download as PDF — paywalled, region-aware price (cheaper than analysis) */}
+      <DownloadCard email={email} analysis={analysis} filename={filename} />
+
       {/* Secondary — buy another analysis via Razorpay. Region-aware price
           is resolved server-side at order-creation time. */}
       <div className="mt-5 rounded-lg border-2 border-amber bg-amber-soft/40 p-4">
@@ -754,6 +764,133 @@ function NextStepsBar({
         >
           ← Analyse another document
         </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Pay-and-download card. Uses PaymentButton with product="download" so the
+ * region-aware lower price is charged. On success, the verify endpoint
+ * returns a short-lived signed token; we immediately POST it (with the
+ * analysis JSON + filename) to /api/download/pdf and trigger a file save.
+ *
+ * No Supabase needed for this path — the signed token is enough.
+ */
+function DownloadCard({
+  email,
+  analysis,
+  filename,
+}: {
+  email: string;
+  analysis: AnalysisResult;
+  filename: string;
+}) {
+  type DownloadState =
+    | { kind: "ready" }
+    | { kind: "downloading" }
+    | { kind: "done" }
+    | { kind: "error"; message: string };
+
+  const [state, setState] = useState<DownloadState>({ kind: "ready" });
+
+  async function fetchAndSavePdf(token: string) {
+    setState({ kind: "downloading" });
+    try {
+      const res = await fetch("/api/download/pdf", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ token, analysis, filename }),
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        setState({
+          kind: "error",
+          message:
+            errBody.message ?? "Couldn't generate the PDF. Please try again.",
+        });
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const base = filename.replace(/\.pdf$/i, "");
+      a.download = `${base} — KnowUrPolicy.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setState({ kind: "done" });
+    } catch (e) {
+      setState({
+        kind: "error",
+        message:
+          e instanceof Error ? e.message : "Couldn't generate the PDF.",
+      });
+    }
+  }
+
+  return (
+    <div className="mt-5 rounded-lg border border-ink-12 bg-white p-4">
+      <div className="flex items-center gap-2">
+        <span className="grid h-8 w-8 flex-none place-items-center rounded-md bg-amber-soft text-amber">
+          <Download className="h-4 w-4" />
+        </span>
+        <div>
+          <div className="text-sm font-semibold text-navy">
+            Download this analysis
+          </div>
+          <div className="text-xs text-navy-mid">
+            Formatted PDF you can save, print, or share with a partner/lawyer.
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4">
+        {state.kind === "downloading" && (
+          <div className="flex items-center justify-center gap-2 rounded-md border border-ink-12 bg-cream px-3 py-2.5 text-sm text-navy">
+            <Loader className="h-4 w-4 animate-spin text-amber" />
+            Generating your PDF…
+          </div>
+        )}
+
+        {state.kind === "done" && (
+          <div className="flex items-center justify-center gap-2 rounded-md border border-flag-g-text/30 bg-flag-g-bg px-3 py-2.5 text-sm font-semibold text-flag-g-text">
+            <Check className="h-4 w-4 flex-none" /> Download started — check
+            your browser&apos;s downloads folder
+          </div>
+        )}
+
+        {state.kind === "error" && (
+          <div className="space-y-2">
+            <div
+              role="alert"
+              className="rounded-md border border-flag-r-text/30 bg-flag-r-bg px-3 py-2 text-xs text-flag-r-text"
+            >
+              {state.message}
+            </div>
+            <PaymentButton
+              email={email}
+              product="download"
+              successHidden
+              onSuccess={(res) => {
+                if (res.downloadToken) fetchAndSavePdf(res.downloadToken);
+              }}
+            />
+          </div>
+        )}
+
+        {state.kind === "ready" && (
+          <PaymentButton
+            email={email}
+            product="download"
+            successHidden
+            onSuccess={(res) => {
+              if (res.downloadToken) fetchAndSavePdf(res.downloadToken);
+            }}
+          />
+        )}
       </div>
     </div>
   );

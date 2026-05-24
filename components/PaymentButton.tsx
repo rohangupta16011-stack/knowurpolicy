@@ -13,16 +13,27 @@ const RAZORPAY_SCRIPT = "https://checkout.razorpay.com/v1/checkout.js";
 
 type PaymentState = "idle" | "loading" | "success" | "error";
 
+export type VerifyResponse = {
+  ok: true;
+  product: "analysis" | "download";
+  downloadToken?: string;
+};
+
 export default function PaymentButton({
   email,
-  label = "Buy another analysis",
+  product = "analysis",
+  label,
   fullWidth = true,
+  successHidden = false,
   onSuccess,
 }: {
   email: string;
+  product?: "analysis" | "download";
   label?: string;
   fullWidth?: boolean;
-  onSuccess?: () => void;
+  /** Suppress the built-in success banner — let the caller render its own */
+  successHidden?: boolean;
+  onSuccess?: (response: VerifyResponse) => void;
 }) {
   const [state, setState] = useState<PaymentState>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -30,9 +41,6 @@ export default function PaymentButton({
     typeof window !== "undefined" && Boolean(window.Razorpay),
   );
 
-  // Lazy-load the Razorpay script once, on first mount.
-  // Not via next/script because we want imperative control over the load promise
-  // and Razorpay's modal needs the global injected before .open() can be called.
   useEffect(() => {
     if (scriptLoaded || typeof window === "undefined") return;
     if (window.Razorpay) {
@@ -63,11 +71,10 @@ export default function PaymentButton({
     setState("loading");
 
     try {
-      // 1. Create order on our server
       const orderRes = await fetch("/api/payment/order", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, product }),
       });
       const orderData = (await orderRes.json()) as
         | {
@@ -76,6 +83,8 @@ export default function PaymentButton({
             currency: string;
             key_id: string;
             display_amount: string;
+            description: string;
+            product: "analysis" | "download";
           }
         | { error: string; message: string };
 
@@ -88,24 +97,21 @@ export default function PaymentButton({
         throw new Error("Payment SDK not loaded yet. Please try again in a moment.");
       }
 
-      // 2. Open Razorpay Checkout
       const rzp = new window.Razorpay({
         key: orderData.key_id,
         amount: orderData.amount,
         currency: orderData.currency,
         name: "KnowUrPolicy",
-        description: "1 document analysis credit",
+        description: orderData.description,
         order_id: orderData.order_id,
         prefill: { email },
         theme: { color: "#C96A00" },
         modal: {
           ondismiss: () => {
-            // User closed the modal — return to idle so they can retry
             setState("idle");
           },
         },
         handler: async (response) => {
-          // 3. Verify signature server-side
           try {
             const verifyRes = await fetch("/api/payment/verify", {
               method: "POST",
@@ -115,10 +121,11 @@ export default function PaymentButton({
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
                 email,
+                product,
               }),
             });
             const verifyData = (await verifyRes.json()) as
-              | { ok: true }
+              | VerifyResponse
               | { error: string; message: string };
             if (!verifyRes.ok || !("ok" in verifyData)) {
               const msg =
@@ -130,7 +137,7 @@ export default function PaymentButton({
               return;
             }
             setState("success");
-            onSuccess?.();
+            onSuccess?.(verifyData);
           } catch {
             setError("Payment received but verification failed. Contact support if your credit doesn't appear.");
             setState("error");
@@ -152,22 +159,28 @@ export default function PaymentButton({
     }
   }
 
-  if (state === "success") {
+  if (state === "success" && !successHidden) {
+    const msg =
+      product === "download"
+        ? "Payment verified · preparing your download…"
+        : "Payment verified · 1 analysis credit added";
     return (
       <div className="flex items-center justify-center gap-2 rounded-md border border-flag-g-text/30 bg-flag-g-bg px-4 py-3 text-sm font-semibold text-flag-g-text">
         <Check className="h-4 w-4 flex-none" />
-        Payment verified · 1 analysis credit added
+        {msg}
       </div>
     );
   }
 
   const widthClass = fullWidth ? "w-full" : "";
+  const defaultLabel =
+    product === "download" ? "Download as PDF" : "Buy another analysis";
 
   return (
     <div className="space-y-2">
       <button
         type="button"
-        onClick={handleClick}
+        onClick={() => handleClick()}
         disabled={state === "loading" || !scriptLoaded || !email}
         className={`btn-primary ${widthClass}`}
       >
@@ -177,7 +190,7 @@ export default function PaymentButton({
           </>
         ) : (
           <>
-            <CreditCard className="h-4 w-4" /> {label}
+            <CreditCard className="h-4 w-4" /> {label ?? defaultLabel}
           </>
         )}
       </button>
@@ -190,7 +203,6 @@ export default function PaymentButton({
   );
 }
 
-// Razorpay SDK types — minimal surface, only what we use.
 type RazorpayOptions = {
   key: string;
   amount: number;

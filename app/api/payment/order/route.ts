@@ -11,9 +11,14 @@ export const runtime = "nodejs";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+type Product = "analysis" | "download";
+
 export async function POST(req: NextRequest) {
-  const body = (await req.json().catch(() => null)) as { email?: string } | null;
+  const body = (await req.json().catch(() => null)) as
+    | { email?: string; product?: string }
+    | null;
   const email = body?.email?.trim().toLowerCase();
+  const product: Product = body?.product === "download" ? "download" : "analysis";
 
   if (!email || !EMAIL_RE.test(email) || email.length > 254) {
     return NextResponse.json(
@@ -22,20 +27,28 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Determine pricing from Vercel edge country header
   const country = req.headers.get("x-vercel-ip-country");
   const pricing = getPricingForCountry(country);
-  const amount = pricingToSmallestUnit(pricing);
+
+  // Pick amount + display string based on product.
+  const amount =
+    product === "download"
+      ? Math.round(pricing.downloadPerDoc * 100)
+      : pricingToSmallestUnit(pricing);
+  const displayAmount =
+    product === "download" ? pricing.downloadPerDocDisplay : pricing.perDocDisplay;
+  const description =
+    product === "download"
+      ? "Download analysis as PDF"
+      : "1 document analysis credit";
 
   if (amount < 100) {
-    // Razorpay minimum charge is 100 (₹1 or $0.01-equivalent)
     return NextResponse.json(
       { error: "amount_too_low", message: "Configured amount is below Razorpay minimum." },
       { status: 400 },
     );
   }
 
-  // Receipt — Razorpay limit is 40 chars. Encode a quick reference.
   const receipt = `kup_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
   try {
@@ -45,13 +58,13 @@ export async function POST(req: NextRequest) {
       receipt,
       notes: {
         email,
+        product,
         tier: pricing.tier,
         country: country ?? "unknown",
       },
     });
 
-    // Persist if Supabase is configured. Graceful no-op otherwise so the
-    // checkout still works in environments without Supabase set up yet.
+    // Persist if Supabase is configured.
     if (isSupabaseConfigured()) {
       try {
         await supabaseAdmin().from("payments").insert({
@@ -63,7 +76,6 @@ export async function POST(req: NextRequest) {
           region_tier: pricing.tier,
         });
       } catch (e) {
-        // Log but don't fail the order — order is already created on Razorpay's side
         console.warn(`[payment/order] supabase insert failed: ${e instanceof Error ? e.message : e}`);
       }
     }
@@ -73,13 +85,13 @@ export async function POST(req: NextRequest) {
       amount: order.amount,
       currency: order.currency,
       key_id: razorpayPublicKey(),
-      display_amount: pricing.perDocDisplay,
+      display_amount: displayAmount,
+      description,
+      product,
     });
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
     console.error(`[payment/order] failed: ${detail}`);
-    // Razorpay's error class has a `statusCode` field; surface 401 on auth
-    // failures distinctly so the client can suggest checking the keys.
     const status =
       typeof (e as { statusCode?: number })?.statusCode === "number" &&
       (e as { statusCode: number }).statusCode === 401

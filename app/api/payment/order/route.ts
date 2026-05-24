@@ -12,14 +12,20 @@ export const runtime = "nodejs";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-type Product = "analysis" | "download";
+type Product = "analysis" | "download" | "qa";
+
+function parseProduct(raw: unknown): Product {
+  if (raw === "download") return "download";
+  if (raw === "qa") return "qa";
+  return "analysis";
+}
 
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as
     | { email?: string; product?: string }
     | null;
   const emailInput = body?.email?.trim() ?? "";
-  const product: Product = body?.product === "download" ? "download" : "analysis";
+  const product: Product = parseProduct(body?.product);
 
   if (!emailInput || !EMAIL_RE.test(emailInput.toLowerCase()) || emailInput.length > 254) {
     return NextResponse.json(
@@ -34,17 +40,23 @@ export async function POST(req: NextRequest) {
   const country = req.headers.get("x-vercel-ip-country");
   const pricing = getPricingForCountry(country);
 
-  // Pick amount + display string based on product.
-  const amount =
-    product === "download"
-      ? Math.round(pricing.downloadPerDoc * 100)
-      : pricingToSmallestUnit(pricing);
-  const displayAmount =
-    product === "download" ? pricing.downloadPerDocDisplay : pricing.perDocDisplay;
-  const description =
-    product === "download"
-      ? "Download analysis as PDF"
-      : "1 document analysis credit";
+  // Pick amount + display string + description based on product.
+  let amount: number;
+  let displayAmount: string;
+  let description: string;
+  if (product === "download") {
+    amount = Math.round(pricing.downloadPerDoc * 100);
+    displayAmount = pricing.downloadPerDocDisplay;
+    description = "Download analysis as PDF";
+  } else if (product === "qa") {
+    amount = Math.round(pricing.qaBundlePrice * 100);
+    displayAmount = pricing.qaBundlePriceDisplay;
+    description = `${pricing.qaBundleSize} follow-up Q&A questions`;
+  } else {
+    amount = pricingToSmallestUnit(pricing);
+    displayAmount = pricing.perDocDisplay;
+    description = "1 document analysis credit";
+  }
 
   if (amount < 100) {
     return NextResponse.json(

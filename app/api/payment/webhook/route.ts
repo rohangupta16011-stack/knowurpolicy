@@ -86,6 +86,10 @@ export async function POST(req: NextRequest) {
   const rawEmail =
     typeof payment?.notes?.email === "string" ? payment.notes.email : null;
   const email = rawEmail ? normalizeEmail(rawEmail) : null;
+  // Product type lets us pick the right credit RPC. Defaults to 'analysis'
+  // for pre-product-tag orders.
+  const product =
+    typeof payment?.notes?.product === "string" ? payment.notes.product : "analysis";
 
   if (eventType === "payment.captured" || eventType === "order.paid") {
     if (orderId) {
@@ -101,10 +105,14 @@ export async function POST(req: NextRequest) {
       // Grant credit. Idempotent against duplicate webhook deliveries because
       // we early-returned above; idempotent across verify+webhook because
       // the webhook secret event is fired exactly once per real capture.
-      await supabase.rpc("grant_paid_credits", {
-        p_email: email,
-        p_amount: 1,
-      });
+      if (product === "qa") {
+        await supabase.rpc("grant_qa_credits", { p_email: email, p_amount: 5 });
+      } else if (product === "download") {
+        // Download is a single-use signed token issued at verify time, not a
+        // persistent credit -- nothing to grant via webhook.
+      } else {
+        await supabase.rpc("grant_paid_credits", { p_email: email, p_amount: 1 });
+      }
     }
   }
 

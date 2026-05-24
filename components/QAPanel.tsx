@@ -2,12 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Loader, MessageCircle, Send, X } from "lucide-react";
+import PaymentButton from "@/components/PaymentButton";
+import type { PricingTier } from "@/lib/pricing";
 
 type QAState =
   | { kind: "idle" }
   | { kind: "loading"; question: string }
   | { kind: "answered"; question: string; answer: string }
-  | { kind: "error"; question: string; message: string };
+  | { kind: "error"; question: string; message: string }
+  | { kind: "paywall"; question: string };
 
 /**
  * Side-drawer Q&A panel. Document text stays in client memory and is sent
@@ -21,10 +24,14 @@ export default function QAPanel({
   open,
   onClose,
   documentText,
+  email,
+  pricing,
 }: {
   open: boolean;
   onClose: () => void;
   documentText: string;
+  email: string;
+  pricing: PricingTier;
 }) {
   const [state, setState] = useState<QAState>({ kind: "idle" });
   const [draft, setDraft] = useState("");
@@ -49,18 +56,21 @@ export default function QAPanel({
     return () => window.removeEventListener("keydown", handler);
   }, [open, onClose]);
 
-  async function ask(e: React.FormEvent) {
-    e.preventDefault();
-    const question = draft.trim();
-    if (!question) return;
-
+  async function askQuestion(question: string) {
     setState({ kind: "loading", question });
     try {
       const res = await fetch("/api/qa", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ documentText, question }),
+        body: JSON.stringify({ documentText, question, email }),
       });
+
+      // Freemium gate exhausted — surface the inline paywall.
+      if (res.status === 402) {
+        setState({ kind: "paywall", question });
+        return;
+      }
+
       const data = (await res.json()) as
         | { answer: string }
         | { error: string; message: string };
@@ -76,6 +86,13 @@ export default function QAPanel({
     } catch {
       setState({ kind: "error", question, message: "Network error. Try again." });
     }
+  }
+
+  async function ask(e: React.FormEvent) {
+    e.preventDefault();
+    const question = draft.trim();
+    if (!question) return;
+    await askQuestion(question);
   }
 
   function reset() {
@@ -176,6 +193,45 @@ export default function QAPanel({
               >
                 Try again
               </button>
+            </>
+          )}
+
+          {state.kind === "paywall" && (
+            <>
+              <Bubble role="user">{state.question}</Bubble>
+              <div className="mt-3 rounded-lg border border-amber bg-amber-soft/40 p-4">
+                <div className="text-xs font-semibold uppercase tracking-[0.08em] text-amber">
+                  You used your free question
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-navy">
+                  Unlock <strong>{pricing.qaBundleSize} more questions</strong>{" "}
+                  about this document for{" "}
+                  <strong className="text-navy">
+                    {pricing.qaBundlePriceDisplay}
+                  </strong>
+                  . We&apos;ll send your question as soon as payment goes through.
+                </p>
+                <div className="mt-4">
+                  <PaymentButton
+                    email={email}
+                    product="qa"
+                    successHidden
+                    label={`Pay ${pricing.qaBundlePriceDisplay} for ${pricing.qaBundleSize} questions`}
+                    onSuccess={() => {
+                      // Credit granted; re-fire the exact question the user
+                      // submitted so they don't have to retype it.
+                      void askQuestion(state.question);
+                    }}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={reset}
+                  className="mt-3 w-full text-center text-xs font-medium text-navy-mid hover:text-navy"
+                >
+                  Cancel
+                </button>
+              </div>
             </>
           )}
         </div>

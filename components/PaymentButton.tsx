@@ -13,9 +13,11 @@ const RAZORPAY_SCRIPT = "https://checkout.razorpay.com/v1/checkout.js";
 
 type PaymentState = "idle" | "loading" | "success" | "error";
 
+export type Product = "analysis" | "download" | "qa";
+
 export type VerifyResponse = {
   ok: true;
-  product: "analysis" | "download";
+  product: Product;
   downloadToken?: string;
 };
 
@@ -28,7 +30,7 @@ export default function PaymentButton({
   onSuccess,
 }: {
   email: string;
-  product?: "analysis" | "download";
+  product?: Product;
   label?: string;
   fullWidth?: boolean;
   /** Suppress the built-in success banner — let the caller render its own */
@@ -84,7 +86,7 @@ export default function PaymentButton({
             key_id: string;
             display_amount: string;
             description: string;
-            product: "analysis" | "download";
+            product: Product;
           }
         | { error: string; message: string };
 
@@ -163,7 +165,9 @@ export default function PaymentButton({
     const msg =
       product === "download"
         ? "Payment verified · preparing your download…"
-        : "Payment verified · 1 analysis credit added";
+        : product === "qa"
+          ? "Payment verified · 5 questions added"
+          : "Payment verified · 1 analysis credit added";
     return (
       <div className="flex items-center justify-center gap-2 rounded-md border border-flag-g-text/30 bg-flag-g-bg px-4 py-3 text-sm font-semibold text-flag-g-text">
         <Check className="h-4 w-4 flex-none" />
@@ -174,7 +178,11 @@ export default function PaymentButton({
 
   const widthClass = fullWidth ? "w-full" : "";
   const defaultLabel =
-    product === "download" ? "Download as PDF" : "Buy another analysis";
+    product === "download"
+      ? "Download as PDF"
+      : product === "qa"
+        ? "Buy 5 questions"
+        : "Buy another analysis";
 
   return (
     <div className="space-y-2">

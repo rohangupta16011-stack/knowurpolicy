@@ -732,6 +732,8 @@ function ResultsView({
         open={qaOpen}
         onClose={() => setQaOpen(false)}
         documentText={documentText}
+        email={email}
+        pricing={pricing}
       />
     </section>
   );

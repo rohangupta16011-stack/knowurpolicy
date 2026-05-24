@@ -23,7 +23,12 @@ export async function POST(req: NextRequest) {
   const paymentId = body?.razorpay_payment_id;
   const signature = body?.razorpay_signature;
   const emailInput = body?.email?.trim() ?? "";
-  const product = body?.product === "download" ? "download" : "analysis";
+  const product: "analysis" | "download" | "qa" =
+    body?.product === "download"
+      ? "download"
+      : body?.product === "qa"
+        ? "qa"
+        : "analysis";
 
   if (!orderId || !paymentId || !signature) {
     return NextResponse.json(
@@ -76,6 +81,25 @@ export async function POST(req: NextRequest) {
     // the user pays, downloads, done.
     const downloadToken = issueDownloadToken(email);
     return NextResponse.json({ ok: true, product: "download", downloadToken });
+  }
+
+  if (product === "qa") {
+    // QA bundle — grant 5 paid Q&A credits. No token returned; the server
+    // decrements via consume_qa_credit on the next /api/qa call.
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabaseAdmin().rpc("grant_qa_credits", {
+          p_email: email,
+          p_amount: 5,
+        });
+        if (error) {
+          console.error(`[payment/verify] grant_qa_credits failed: ${error.message}`);
+        }
+      } catch (e) {
+        console.error(`[payment/verify] qa supabase failed: ${e instanceof Error ? e.message : e}`);
+      }
+    }
+    return NextResponse.json({ ok: true, product: "qa" });
   }
 
   // Analysis credit — grant via Supabase RPC if available.

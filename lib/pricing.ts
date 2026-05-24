@@ -24,7 +24,15 @@ export type PricingTier = {
   downloadPerDoc: number;
   /** formatted download price, e.g. "$1.49" or "₹49" */
   downloadPerDocDisplay: string;
+  /** Bundle of follow-up Q&A questions purchased together (one charge,
+   *  multiple questions credited). Priced at the same tier as the PDF
+   *  download so the upsell math is easy to explain to users. */
+  qaBundlePrice: number;
+  qaBundlePriceDisplay: string;
+  qaBundleSize: number;
 };
+
+const QA_BUNDLE_SIZE = 5;
 
 const TIER1_USD: PricingTier = {
   tier: "tier1",
@@ -35,6 +43,9 @@ const TIER1_USD: PricingTier = {
   perDocUsdEquivalent: 2.99,
   downloadPerDoc: 1.49, // half of analysis
   downloadPerDocDisplay: "$1.49",
+  qaBundlePrice: 1.49,
+  qaBundlePriceDisplay: "$1.49",
+  qaBundleSize: QA_BUNDLE_SIZE,
 };
 
 const TIER2_INR: PricingTier = {
@@ -46,6 +57,9 @@ const TIER2_INR: PricingTier = {
   perDocUsdEquivalent: 1.19, // ~₹83/USD as of 2026
   downloadPerDoc: 49, // half of analysis
   downloadPerDocDisplay: "₹49",
+  qaBundlePrice: 49,
+  qaBundlePriceDisplay: "₹49",
+  qaBundleSize: QA_BUNDLE_SIZE,
 };
 
 const TIER3_USD: PricingTier = {
@@ -58,6 +72,9 @@ const TIER3_USD: PricingTier = {
   // Can't go below $1.00 — Razorpay minimum is 100 cents.
   downloadPerDoc: 1.0,
   downloadPerDocDisplay: "$1.00",
+  qaBundlePrice: 1.0,
+  qaBundlePriceDisplay: "$1.00",
+  qaBundleSize: QA_BUNDLE_SIZE,
 };
 
 // Tier 1: developed markets that bear full USD pricing.

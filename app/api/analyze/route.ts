@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { analyseDocument } from "@/lib/claude";
+import { isDisposableEmail, normalizeEmail } from "@/lib/email-normalize";
 import { extractPdfText } from "@/lib/pdf-extract";
 import { getPricingForCountry } from "@/lib/pricing";
 import { isSupabaseConfigured, supabaseAdmin } from "@/lib/supabase-admin";
@@ -9,6 +10,18 @@ export const maxDuration = 60;
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10MB per PRD §6.2
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_FREE_PER_IP_PER_DAY = 3;
+
+function clientIp(req: NextRequest): string {
+  // Vercel forwards the client IP here. Fall back to x-forwarded-for so the
+  // logic works in any reverse-proxy setup. "unknown" only happens for
+  // local dev / direct loopback calls; we still gate those.
+  return (
+    req.headers.get("x-real-ip") ??
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    "unknown"
+  );
+}
 
 export async function POST(req: NextRequest) {
   const form = await req.formData().catch((e) => {
@@ -37,13 +50,30 @@ export async function POST(req: NextRequest) {
   }
 
   // Email gate — required per the freemium gate (PRD §6.5).
-  const emailRaw = form.get("email");
-  const email = typeof emailRaw === "string" ? emailRaw.trim().toLowerCase() : "";
-  if (!email || !EMAIL_RE.test(email) || email.length > 254) {
+  const emailRawValue = form.get("email");
+  const emailInput = typeof emailRawValue === "string" ? emailRawValue.trim() : "";
+  if (!emailInput || !EMAIL_RE.test(emailInput.toLowerCase()) || emailInput.length > 254) {
     return NextResponse.json(
       {
         error: "missing_email",
         message: "Please enter a valid email address to continue.",
+      },
+      { status: 400 },
+    );
+  }
+  // Canonical form used as the DB key. Catches `me+x@gmail.com` /
+  // `M.E@gmail.com` / `me@googlemail.com` collisions.
+  const email = normalizeEmail(emailInput);
+
+  // Disposable address block — kills the easiest abuse vector (spin up a
+  // throwaway inbox per upload to get unlimited free analyses).
+  if (isDisposableEmail(email)) {
+    console.warn(`[analyze] rejected disposable email: ${email}`);
+    return NextResponse.json(
+      {
+        error: "disposable_email",
+        message:
+          "Disposable email addresses aren't supported. Please use a permanent email so we can attribute your free analysis correctly.",
       },
       { status: 400 },
     );
@@ -72,8 +102,30 @@ export async function POST(req: NextRequest) {
           },
           { status: 402 },
         );
+      } else if (data === "free") {
+        // IP-level backstop: limits unique abusers spinning up many emails
+        // from the same network. Only triggers on the free path; paid users
+        // are not rate-limited by IP.
+        const ip = clientIp(req);
+        const { data: ipOk, error: ipError } = await supabaseAdmin().rpc(
+          "check_and_consume_free_for_ip",
+          { p_ip: ip, p_max: MAX_FREE_PER_IP_PER_DAY },
+        );
+        if (ipError) {
+          console.error(`[analyze] ip gate rpc failed: ${ipError.message}`);
+        } else if (ipOk === false) {
+          console.warn(`[analyze] ip rate limit hit: ${ip} on ${email}`);
+          return NextResponse.json(
+            {
+              error: "rate_limited",
+              message:
+                "Too many free analyses from your network today. Please come back tomorrow, or pay for an analysis to continue now.",
+            },
+            { status: 429 },
+          );
+        }
       }
-      // else: "free" or "paid" — credit consumed, proceed to analyse
+      // else: "paid" — paid credit decremented, IP gate skipped.
     } catch (e) {
       console.error(`[analyze] gate failed: ${e instanceof Error ? e.message : e}`);
     }

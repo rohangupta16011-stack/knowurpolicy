@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { normalizeEmail } from "@/lib/email-normalize";
 
 export const runtime = "nodejs";
 
@@ -7,7 +8,8 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as { email?: string } | null;
-  const email = body?.email?.trim().toLowerCase();
+  const emailInput = body?.email?.trim() ?? "";
+  const email = emailInput ? normalizeEmail(emailInput) : "";
 
   if (!email || !EMAIL_RE.test(email) || email.length > 254) {
     return NextResponse.json(

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { issueDownloadToken } from "@/lib/download-token";
+import { normalizeEmail } from "@/lib/email-normalize";
 import { verifyCheckoutSignature } from "@/lib/razorpay";
 import { isSupabaseConfigured, supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
   const orderId = body?.razorpay_order_id;
   const paymentId = body?.razorpay_payment_id;
   const signature = body?.razorpay_signature;
-  const email = body?.email?.trim().toLowerCase();
+  const emailInput = body?.email?.trim() ?? "";
   const product = body?.product === "download" ? "download" : "analysis";
 
   if (!orderId || !paymentId || !signature) {
@@ -30,12 +31,15 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  if (!email || !EMAIL_RE.test(email)) {
+  if (!emailInput || !EMAIL_RE.test(emailInput.toLowerCase())) {
     return NextResponse.json(
       { error: "invalid_email", message: "Missing or invalid email." },
       { status: 400 },
     );
   }
+  // Canonical form so credit grants line up with consume_analysis_credit in
+  // /api/analyze regardless of plus-addressing / dot variations the user typed.
+  const email = normalizeEmail(emailInput);
 
   // Verify the Checkout signature FIRST. Without this guard anyone could
   // POST arbitrary ids and grant themselves a download token or credit.

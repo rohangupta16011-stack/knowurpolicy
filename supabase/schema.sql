@@ -42,8 +42,20 @@ create table if not exists email_usage (
   paid_credits       integer not null default 0 check (paid_credits >= 0),
   total_analyses     integer not null default 0 check (total_analyses >= 0),
   first_seen_at      timestamptz not null default now(),
-  last_analysis_at   timestamptz
+  last_analysis_at   timestamptz,
+  -- Q&A credits: 1 free question per email lifetime, then bundles of N
+  -- (currently 5) purchased together for the regional download price.
+  qa_free_used       boolean not null default false,
+  qa_paid_credits    integer not null default 0 check (qa_paid_credits >= 0),
+  total_qa           integer not null default 0 check (total_qa >= 0),
+  last_qa_at         timestamptz
 );
+
+-- Backfill the QA columns for any pre-existing rows from before this migration.
+alter table email_usage add column if not exists qa_free_used boolean not null default false;
+alter table email_usage add column if not exists qa_paid_credits integer not null default 0 check (qa_paid_credits >= 0);
+alter table email_usage add column if not exists total_qa integer not null default 0 check (total_qa >= 0);
+alter table email_usage add column if not exists last_qa_at timestamptz;
 
 
 -- =============================================================================
@@ -66,10 +78,16 @@ create table if not exists payments (
                           check (status in ('created', 'captured', 'failed', 'refunded')),
   credits_granted       integer not null default 1 check (credits_granted >= 0),
   region_tier           text not null check (region_tier in ('tier1', 'tier2', 'tier3')),
+  product               text not null default 'analysis'
+                          check (product in ('analysis', 'download', 'qa')),
   failure_reason        text,
   created_at            timestamptz not null default now(),
   updated_at            timestamptz not null default now()
 );
+
+-- Backfill product column for pre-existing rows from before this migration.
+alter table payments add column if not exists product text not null default 'analysis'
+  check (product in ('analysis', 'download', 'qa'));
 
 create index if not exists payments_email_idx       on payments (email);
 create index if not exists payments_status_idx      on payments (status);
@@ -104,6 +122,29 @@ create table if not exists waitlist (
   joined_at  timestamptz not null default now(),
   source     text not null default 'pricing'
 );
+
+
+-- =============================================================================
+-- ip_usage_daily — per-IP free-analysis rate limit
+-- =============================================================================
+-- Backstop to the per-email gate so a single abuser can't spin up unlimited
+-- throwaway emails from the same network. Counter resets at midnight UTC
+-- (one row per (ip, day) pair). Old rows can be GC'd manually; for an MVP
+-- they're cheap enough to leave.
+--
+-- Counter increments on EVERY free attempt (including ones that get blocked),
+-- which is what we want — a blocked abuser shouldn't reset their quota by
+-- retrying.
+
+create table if not exists ip_usage_daily (
+  ip               text not null,
+  day              date not null,
+  free_attempts    integer not null default 0 check (free_attempts >= 0),
+  first_seen_at    timestamptz not null default now(),
+  primary key (ip, day)
+);
+
+create index if not exists ip_usage_daily_day_idx on ip_usage_daily (day);
 
 
 -- =============================================================================
@@ -195,6 +236,92 @@ begin
 end;
 $$;
 
+-- Increment today's free-attempt counter for an IP and return whether it is
+-- still within the limit. Atomic so concurrent uploads from the same IP
+-- can't race past the cap.
+create or replace function check_and_consume_free_for_ip(
+  p_ip text,
+  p_max int default 3
+)
+returns boolean
+language plpgsql
+security definer
+as $$
+declare
+  v_today date := current_date;
+  v_count int;
+begin
+  insert into ip_usage_daily (ip, day, free_attempts)
+  values (p_ip, v_today, 1)
+  on conflict (ip, day) do update
+    set free_attempts = ip_usage_daily.free_attempts + 1
+  returning ip_usage_daily.free_attempts into v_count;
+  return v_count <= p_max;
+end;
+$$;
+
+
+-- Grant N paid Q&A credits to an email. Upserts if the email is new.
+-- Returns the new total qa credits remaining.
+create or replace function grant_qa_credits(
+  p_email text,
+  p_amount int default 5
+)
+returns int
+language plpgsql
+security definer
+as $$
+declare
+  v_new_total int;
+begin
+  insert into email_usage (email, qa_paid_credits)
+  values (p_email, p_amount)
+  on conflict (email) do update
+    set qa_paid_credits = email_usage.qa_paid_credits + p_amount
+  returning email_usage.qa_paid_credits into v_new_total;
+  return v_new_total;
+end;
+$$;
+
+-- Try to consume one Q&A credit. Same shape as consume_analysis_credit:
+--   'free'  — free question granted (one per email lifetime)
+--   'paid'  — paid credit decremented from the bundle
+--   'none'  — out of credits, prompt for the next bundle
+create or replace function consume_qa_credit(
+  p_email text
+)
+returns text
+language plpgsql
+security definer
+as $$
+declare
+  v_row email_usage%rowtype;
+begin
+  insert into email_usage (email) values (p_email)
+  on conflict (email) do nothing;
+
+  select * into v_row from email_usage where email = p_email for update;
+
+  if not v_row.qa_free_used then
+    update email_usage
+      set qa_free_used = true,
+          total_qa = total_qa + 1,
+          last_qa_at = now()
+      where email = p_email;
+    return 'free';
+  elsif v_row.qa_paid_credits > 0 then
+    update email_usage
+      set qa_paid_credits = qa_paid_credits - 1,
+          total_qa = total_qa + 1,
+          last_qa_at = now()
+      where email = p_email;
+    return 'paid';
+  else
+    return 'none';
+  end if;
+end;
+$$;
+
 
 -- =============================================================================
 -- Row Level Security — deny by default
@@ -207,3 +334,4 @@ alter table email_usage     enable row level security;
 alter table payments        enable row level security;
 alter table webhook_events  enable row level security;
 alter table waitlist        enable row level security;
+alter table ip_usage_daily  enable row level security;

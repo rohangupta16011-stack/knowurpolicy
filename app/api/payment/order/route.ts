@@ -4,6 +4,7 @@ import {
   razorpayClient,
   razorpayPublicKey,
 } from "@/lib/razorpay";
+import { normalizeEmail } from "@/lib/email-normalize";
 import { getPricingForCountry } from "@/lib/pricing";
 import { isSupabaseConfigured, supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -17,15 +18,18 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as
     | { email?: string; product?: string }
     | null;
-  const email = body?.email?.trim().toLowerCase();
+  const emailInput = body?.email?.trim() ?? "";
   const product: Product = body?.product === "download" ? "download" : "analysis";
 
-  if (!email || !EMAIL_RE.test(email) || email.length > 254) {
+  if (!emailInput || !EMAIL_RE.test(emailInput.toLowerCase()) || emailInput.length > 254) {
     return NextResponse.json(
       { error: "invalid_email", message: "Please enter a valid email address." },
       { status: 400 },
     );
   }
+  // Canonical form used as the DB key. Razorpay receipt still goes to the
+  // raw email the user typed (the user-facing "we'll email you" inbox).
+  const email = normalizeEmail(emailInput);
 
   const country = req.headers.get("x-vercel-ip-country");
   const pricing = getPricingForCountry(country);

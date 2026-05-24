@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { normalizeEmail } from "@/lib/email-normalize";
 import { verifyWebhookSignature } from "@/lib/razorpay";
 import { isSupabaseConfigured, supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -79,8 +80,12 @@ export async function POST(req: NextRequest) {
   const payment = event.payload?.payment?.entity;
   const order = event.payload?.order?.entity;
   const orderId = payment?.order_id ?? order?.id;
-  const email =
+  // Notes.email was normalized at order-creation time, but normalize again as
+  // a safety net (old orders, manually-set notes, etc.) so credit grants
+  // always land on the canonical key.
+  const rawEmail =
     typeof payment?.notes?.email === "string" ? payment.notes.email : null;
+  const email = rawEmail ? normalizeEmail(rawEmail) : null;
 
   if (eventType === "payment.captured" || eventType === "order.paid") {
     if (orderId) {

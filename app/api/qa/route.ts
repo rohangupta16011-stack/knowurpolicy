@@ -55,8 +55,13 @@ export async function POST(req: NextRequest) {
   // Only enforced when Supabase is configured. Without it the route falls
   // through to ungated behaviour so local dev / unwired deployments keep
   // working.
-  if (isSupabaseConfigured()) {
+  const supabaseConfigured = isSupabaseConfigured();
+  console.log(
+    `[qa] gate-attempt email=${email || "(empty)"} configured=${supabaseConfigured}`,
+  );
+  if (supabaseConfigured) {
     if (!email || !EMAIL_RE.test(email) || email.length > 254) {
+      console.warn(`[qa] missing/invalid email — rejecting`);
       return NextResponse.json(
         {
           error: "missing_email",
@@ -69,6 +74,7 @@ export async function POST(req: NextRequest) {
       const { data, error } = await supabaseAdmin().rpc("consume_qa_credit", {
         p_email: email,
       });
+      console.log(`[qa] consume_qa_credit -> data=${JSON.stringify(data)} error=${error?.message ?? "(none)"}`);
       if (error) {
         // Supabase outage — don't block the user; log it and proceed.
         console.error(`[qa] gate rpc failed: ${error.message}`);

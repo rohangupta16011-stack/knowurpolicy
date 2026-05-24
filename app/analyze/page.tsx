@@ -666,14 +666,15 @@ function ResultsView({
       </div>
 
       {/* Section order per UX-audit P0: positive baseline first, then risks.
-          What's covered → What's NOT covered → Watch list → Deadlines → Obligations.
-          Watch list is force-open since it's the highest-priority risk surface. */}
+          Each section is now in preview mode — one sample item visible, the
+          rest paywalled behind the PDF download. */}
       <AccordionSection
         icon={<CircleCheck className="h-4 w-4 text-flag-g-text" />}
         title="What's covered"
         subtitle="What the document grants or includes."
         tone="green"
         items={analysis.covered}
+        previewCount={1}
       />
 
       <AccordionSection
@@ -682,6 +683,7 @@ function ResultsView({
         subtitle="Exclusions, gaps, and topics not addressed in this document."
         tone="red"
         items={analysis.not_covered}
+        previewCount={1}
       />
 
       {analysis.watch_list.length > 0 && (
@@ -691,7 +693,7 @@ function ResultsView({
           subtitle="Unusual or restrictive clauses — read carefully."
           tone="red"
           items={analysis.watch_list}
-          forceOpen
+          previewCount={1}
         />
       )}
 
@@ -701,6 +703,7 @@ function ResultsView({
         subtitle="Time windows, caps, and notice periods."
         tone="yellow"
         items={analysis.deadlines_and_limits}
+        previewCount={1}
       />
 
       <AccordionSection
@@ -709,6 +712,7 @@ function ResultsView({
         subtitle="What you must do to keep the agreement valid."
         tone="yellow"
         items={analysis.your_obligations}
+        previewCount={1}
       />
 
       <NextStepsBar
@@ -810,8 +814,8 @@ function NextStepsBar({
 }) {
   const hook =
     redCount === 0
-      ? "Document looks standard. Here's what to do next."
-      : `You have ${redCount} item${redCount === 1 ? "" : "s"} worth a closer look. Here's what to do next.`;
+      ? "Document looks standard. Get the full report to read every clause."
+      : `You have ${redCount} item${redCount === 1 ? "" : "s"} worth a closer look. Get the full report to read every clause.`;
 
   return (
     <div className="mt-8 rounded-lg border border-ink-12 bg-white p-6">
@@ -820,20 +824,7 @@ function NextStepsBar({
       </div>
       <p className="mt-2 text-lg font-display font-bold text-navy">{hook}</p>
 
-      {/* Primary — full-width amber. Highest engagement moment, biggest button. */}
-      <button
-        type="button"
-        onClick={onAsk}
-        className="btn-primary mt-5 w-full !py-3.5 text-base"
-      >
-        <MessageCircle className="h-4 w-4" />
-        Ask a question about this document
-      </button>
-      <p className="mt-1.5 text-center text-xs text-navy-mid">
-        Answers come strictly from the document — no general knowledge.
-      </p>
-
-      {/* Download as PDF — paywalled, region-aware price (cheaper than analysis) */}
+      {/* Primary — download the full report (now that on-screen view is a preview) */}
       <DownloadCard
         email={email}
         analysis={analysis}
@@ -843,6 +834,20 @@ function NextStepsBar({
         autoDownloadAfterAuth={autoDownloadAfterAuth}
         onAutoDownloadConsumed={onAutoDownloadConsumed}
       />
+
+      {/* Secondary — Q&A. Still works against the full document text, just
+          presented after the main download CTA. */}
+      <button
+        type="button"
+        onClick={onAsk}
+        className="btn-secondary mt-5 w-full !py-3.5 text-base"
+      >
+        <MessageCircle className="h-4 w-4" />
+        Or ask a question about this document
+      </button>
+      <p className="mt-1.5 text-center text-xs text-navy-mid">
+        Answers come strictly from the document — no general knowledge.
+      </p>
 
       {/* Secondary — buy another analysis via Razorpay. Only the user's
           region price is shown (detected server-side from the edge); the
@@ -1033,10 +1038,12 @@ function DownloadCard({
         </span>
         <div>
           <div className="text-sm font-semibold text-navy">
-            Download this analysis
+            Read the full analysis
           </div>
           <div className="text-xs text-navy-mid">
-            Formatted PDF you can save, print, or share with a partner/lawyer.
+            On-screen view above is a preview. The PDF has every clause, every
+            risk, and every deadline — save, print, or share it with a
+            partner / lawyer.
           </div>
         </div>
       </div>
@@ -1125,6 +1132,7 @@ function AccordionSection({
   tone,
   items,
   forceOpen = false,
+  previewCount,
 }: {
   icon: React.ReactNode;
   title: string;
@@ -1132,6 +1140,9 @@ function AccordionSection({
   tone: "green" | "yellow" | "red";
   items: ClauseItem[];
   forceOpen?: boolean;
+  /** When set, render in preview mode: always open, show only this many items,
+   *  and append a "download full PDF" nudge. */
+  previewCount?: number;
 }) {
   const [isDesktop, setIsDesktop] = useState(true);
   useEffect(() => {
@@ -1154,7 +1165,10 @@ function AccordionSection({
     red: "bg-flag-r-bg text-flag-r-text border-flag-r-text/30",
   }[tone];
 
-  const initiallyOpen = forceOpen || isDesktop;
+  const inPreviewMode = typeof previewCount === "number";
+  const initiallyOpen = inPreviewMode || forceOpen || isDesktop;
+  const visibleItems = inPreviewMode ? items.slice(0, previewCount) : items;
+  const hiddenCount = inPreviewMode ? Math.max(0, items.length - previewCount) : 0;
 
   if (items.length === 0) {
     return (
@@ -1166,6 +1180,53 @@ function AccordionSection({
           </div>
           <span className="text-xs font-medium text-navy-mid">none</span>
         </div>
+      </div>
+    );
+  }
+
+  // In preview mode, render a static expanded card (no <details> toggle) and
+  // append a "download for the rest" nudge below the visible items.
+  if (inPreviewMode) {
+    return (
+      <div className="overflow-hidden rounded-lg border border-ink-12 bg-white">
+        <div className={`flex items-center justify-between px-4 py-3 ${headerBg}`}>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-sm font-semibold text-navy">
+              {icon}
+              {title}
+              <span className={`ml-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${countChip}`}>
+                {items.length} {items.length === 1 ? "item" : "items"}
+              </span>
+            </div>
+            {subtitle && (
+              <div className="mt-0.5 ml-6 text-[11px] text-navy-mid">
+                {subtitle}
+              </div>
+            )}
+          </div>
+        </div>
+        <ul className="space-y-2 bg-cream p-3">
+          {visibleItems.map((item, i) => (
+            <ClauseListItem key={i} item={item} tone={tone} />
+          ))}
+        </ul>
+        {hiddenCount > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              document
+                .getElementById("download-card")
+                ?.scrollIntoView({ behavior: "smooth", block: "center" });
+            }}
+            className="flex w-full items-center justify-between border-t border-ink-12 bg-amber-soft/60 px-4 py-3 text-left text-xs font-semibold text-navy transition hover:bg-amber-soft"
+          >
+            <span>
+              + {hiddenCount} more {hiddenCount === 1 ? "item" : "items"} —
+              read in the full PDF
+            </span>
+            <span className="text-amber">Download →</span>
+          </button>
+        )}
       </div>
     );
   }

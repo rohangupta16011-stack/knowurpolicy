@@ -13,7 +13,6 @@ import {
 import Footer from "@/components/Footer";
 import LegalDisclaimer from "@/components/LegalDisclaimer";
 import Nav from "@/components/Nav";
-import WaitlistForm from "@/components/WaitlistForm";
 import { FAQS, META_DESCRIPTION } from "@/lib/content";
 import { getPricingFromRequest, type PricingTier } from "@/lib/pricing";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
@@ -52,17 +51,32 @@ function StructuredData({ pricing }: { pricing: PricingTier }) {
     offers: [
       {
         "@type": "Offer",
-        name: "Free",
+        name: "Free analysis",
         price: "0",
         priceCurrency: "USD",
-        description: "1 analysis per email, no payment required",
+        description:
+          "1 document analysis + 1 Q&A question per Google account, no payment required",
       },
       {
         "@type": "Offer",
-        name: "Single document",
+        name: "Additional analysis",
         price: String(pricing.perDoc),
         priceCurrency: pricing.currency,
         description: "Per-document analysis after the free first one",
+      },
+      {
+        "@type": "Offer",
+        name: "Full PDF report",
+        price: String(pricing.downloadPerDoc),
+        priceCurrency: pricing.currency,
+        description: "Download the full analysis as a formatted PDF",
+      },
+      {
+        "@type": "Offer",
+        name: `${pricing.qaBundleSize} Q&A questions`,
+        price: String(pricing.qaBundlePrice),
+        priceCurrency: pricing.currency,
+        description: `Bundle of ${pricing.qaBundleSize} additional Q&A questions about your document`,
       },
     ],
   };
@@ -121,12 +135,15 @@ function Hero() {
 
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link href="/analyze" className="btn-primary text-base">
-            Upload your document — it&apos;s free
+            Get your free analysis
           </Link>
           <a href="#sample" className="btn-ghost">
             See a sample →
           </a>
         </div>
+        <p className="mt-3 text-xs text-navy-mid">
+          Sign in with Google · no card · 30 seconds
+        </p>
 
         <ul className="mx-auto mt-10 flex max-w-2xl flex-wrap items-center justify-center gap-x-6 gap-y-3 text-xs text-navy-mid">
           <Trust icon={<ShieldCheck className="h-3.5 w-3.5 text-flag-g-text" />}>
@@ -364,11 +381,11 @@ function Pricing({ pricing }: { pricing: PricingTier }) {
           </div>
           <ul className="mt-5 space-y-2 text-sm text-navy">
             <FeatureItem>1 full document analysis</FeatureItem>
-            <FeatureItem>3 Q&amp;A follow-up questions</FeatureItem>
-            <FeatureItem>All five clause sections</FeatureItem>
+            <FeatureItem>1 free Q&amp;A follow-up question</FeatureItem>
+            <FeatureItem>On-screen preview of every section</FeatureItem>
           </ul>
           <Link href="/analyze" className="btn-secondary mt-6 w-full">
-            Try free
+            Sign in &amp; try free
           </Link>
         </div>
 
@@ -378,28 +395,60 @@ function Pricing({ pricing }: { pricing: PricingTier }) {
             Pay per document
           </span>
           <div className="font-display text-xl font-bold text-navy">
-            Single document
+            Each additional analysis
           </div>
           <div className="mt-2 font-display text-3xl font-bold text-navy">
             {pricing.perDocDisplay}
             <span className="ml-1 text-sm font-medium text-navy-mid">
-              per analysis
+              per document
             </span>
           </div>
           <p className="mt-1 text-xs text-navy-mid">
-            Pricing for your region · {pricing.currency}
+            Charged in {pricing.currency} · region-aware
           </p>
           <ul className="mt-5 space-y-2 text-sm text-navy">
-            <FeatureItem>Each document analysed in 30 seconds</FeatureItem>
-            <FeatureItem>Unlimited Q&amp;A on that document</FeatureItem>
-            <FeatureItem>Export the analysis as a PDF report</FeatureItem>
+            <FeatureItem>Full analysis in ~30 seconds</FeatureItem>
+            <FeatureItem>Same on-screen preview as the free tier</FeatureItem>
             <FeatureItem>No subscription · pay only what you use</FeatureItem>
           </ul>
-          <p className="mt-5 text-xs font-medium text-navy-mid">
-            Paid analyses launch this week — drop your email and we&apos;ll
-            notify you the moment they&apos;re live.
-          </p>
-          <WaitlistForm />
+          <Link href="/analyze" className="btn-primary mt-6 w-full">
+            Get started
+          </Link>
+        </div>
+      </div>
+
+      {/* Optional add-ons — clearly separate from the main per-doc price */}
+      <div className="mt-6 rounded-lg border border-ink-12 bg-cream/60 p-5">
+        <div className="text-xs font-semibold uppercase tracking-[0.08em] text-amber">
+          Optional add-ons
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <div className="flex items-baseline justify-between rounded-md border border-ink-12 bg-white px-4 py-3">
+            <div>
+              <div className="text-sm font-semibold text-navy">
+                Full PDF report
+              </div>
+              <div className="text-xs text-navy-mid">
+                Every clause, every risk — save / print / share
+              </div>
+            </div>
+            <div className="font-display text-lg font-bold text-navy">
+              {pricing.downloadPerDocDisplay}
+            </div>
+          </div>
+          <div className="flex items-baseline justify-between rounded-md border border-ink-12 bg-white px-4 py-3">
+            <div>
+              <div className="text-sm font-semibold text-navy">
+                {pricing.qaBundleSize} more Q&amp;A questions
+              </div>
+              <div className="text-xs text-navy-mid">
+                After your free question, in a single bundle
+              </div>
+            </div>
+            <div className="font-display text-lg font-bold text-navy">
+              {pricing.qaBundlePriceDisplay}
+            </div>
+          </div>
         </div>
       </div>
     </section>

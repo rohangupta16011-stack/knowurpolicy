@@ -20,8 +20,20 @@ export const FAQS = [
     a: "Every clause is grounded in your document — we do not fabricate. Anything red-flagged should be reviewed with a professional before you act.",
   },
   {
+    q: "Do I need an account?",
+    a: "Yes — you sign in with your Google account so your free credit, paid analyses, and any add-ons stay attached to one identity. No password to remember, no separate signup form.",
+  },
+  {
     q: "What happens after my free analysis?",
-    a: "Your first analysis is free, no card required — we just need your email so you can find your analyses again. After that, additional analyses are paid per document. No subscription, no commitment — you only pay when you upload another.",
+    a: "Your first analysis is free, no card required. After that, additional analyses are paid per document at your regional price. There's no subscription — you only pay when you upload another document.",
+  },
+  {
+    q: "What do I see on screen vs. in the PDF?",
+    a: "On screen you get a preview: the complexity score, the plain-English summary, and the first item from each clause section. The full report — every clause, every risk, every deadline — is in the downloadable PDF, available as a small one-time add-on.",
+  },
+  {
+    q: "How does Q&A pricing work?",
+    a: "After your free analysis you get one follow-up question on the document at no charge. Need more? A bundle of 5 additional questions is available as a small one-time add-on at the same regional price.",
   },
   {
     q: "Why does the price differ by region?",

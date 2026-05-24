@@ -6,10 +6,24 @@ import {
 } from "./prompts";
 import type { AnalysisResult } from "./types";
 
-// The PRD specifies claude-sonnet-4-20250514 (the May 2025 Sonnet 4.0). We use
-// the current best Sonnet — claude-sonnet-4-6 — which has the same API shape
-// and stronger document comprehension. Pin to a different ID via env if needed.
-const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
+// Adaptive model selection: Sonnet gives the strongest analysis but on long
+// documents it can take 25-40s, which combined with PDF extraction blows past
+// Vercel's 60s function cap. For large documents we downshift to Haiku, which
+// is dramatically faster (~5-12s) and only marginally weaker at structured
+// JSON extraction.
+//
+// Pin a specific model via ANTHROPIC_MODEL env var to override the heuristic.
+const SONNET_MODEL = "claude-sonnet-4-6";
+const HAIKU_MODEL = "claude-haiku-4-5";
+const LARGE_DOC_CHAR_THRESHOLD = 20_000;
+
+function pickModel(documentText: string): string {
+  const override = process.env.ANTHROPIC_MODEL;
+  if (override) return override;
+  return documentText.length > LARGE_DOC_CHAR_THRESHOLD
+    ? HAIKU_MODEL
+    : SONNET_MODEL;
+}
 
 let _client: Anthropic | null = null;
 function client(): Anthropic {
@@ -41,11 +55,16 @@ function extractJSON(text: string): string {
 export async function analyseDocument(
   documentText: string,
 ): Promise<AnalysisResult> {
+  const model = pickModel(documentText);
+  console.log(
+    `[claude] analyse model=${model} chars=${documentText.length}`,
+  );
+
   // System prompt is cached: it never changes between requests.
   // Analysis instructions are cached separately so they survive even if we
   // tweak the system prompt later. Document text is per-request and uncached.
   const response = await client().messages.create({
-    model: MODEL,
+    model,
     max_tokens: ANALYSIS_MAX_TOKENS,
     system: [
       {
@@ -83,18 +102,19 @@ export async function analyseDocument(
     parsed = JSON.parse(json) as AnalysisResult;
   } catch (e) {
     // One retry with explicit repair instruction — per PRD §7.3 error handling.
-    parsed = await repairAndRetry(documentText, textBlock.text);
+    parsed = await repairAndRetry(model, documentText, textBlock.text);
   }
 
   return parsed;
 }
 
 async function repairAndRetry(
+  model: string,
   documentText: string,
   badOutput: string,
 ): Promise<AnalysisResult> {
   const response = await client().messages.create({
-    model: MODEL,
+    model,
     max_tokens: ANALYSIS_MAX_TOKENS,
     system: SYSTEM_PROMPT,
     messages: [
@@ -125,8 +145,9 @@ export async function answerQuestion(
   documentText: string,
   question: string,
 ): Promise<string> {
+  const model = pickModel(documentText);
   const response = await client().messages.create({
-    model: MODEL,
+    model,
     max_tokens: QA_MAX_TOKENS,
     system: [
       {

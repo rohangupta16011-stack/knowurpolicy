@@ -33,11 +33,11 @@ function client(): Anthropic {
   return _client;
 }
 
-// Tightened from 4000 to 2500 after dense insurance PDFs were hitting the
-// 60s Vercel function cap (LlamaParse ~20s + Haiku at 4000 max_tokens ~30s).
-// 2500 still comfortably fits a 50-clause analysis (~50 tokens/clause × 5
-// sections × 10 clauses average ≈ 2500). Bump this if we ever see truncation.
-const ANALYSIS_MAX_TOKENS = 2500;
+// 3500 max_tokens with a "max 8 items per section" instruction in the prompt
+// (5 sections × 8 items × ~50 tokens ≈ 2000 typical, 3500 = safety margin).
+// Dense PDFs were truncating at 2500 (invalid JSON), and 4000 was pushing
+// past the 60s Vercel cap. 3500 + prompt-side item cap is the sweet spot.
+const ANALYSIS_MAX_TOKENS = 3500;
 const QA_MAX_TOKENS = 1000;
 
 /**

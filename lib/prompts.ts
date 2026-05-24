@@ -29,6 +29,7 @@ SECTION SEMANTICS:
 - "watch_list" = unusual, restrictive, or commonly contested clauses that deserve attention.
 FLAGS: "green" = standard, "yellow" = watch, "red" = unusual or highly restrictive
 RULES: Only include items explicitly in the document. Empty sections = []. Every explanation under 40 words. No duplicate clauses across sections.
+MAXIMUM 8 ITEMS PER SECTION. If the document contains more, pick the 8 most important / most user-impactful for that section. Total output must fit under 2500 tokens — be ruthless about what matters most.
 DOCUMENT TEXT:`;
 
 export function buildQAUserMessage(documentText: string, question: string) {

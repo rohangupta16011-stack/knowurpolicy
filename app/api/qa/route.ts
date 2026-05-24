@@ -56,8 +56,9 @@ export async function POST(req: NextRequest) {
   // through to ungated behaviour so local dev / unwired deployments keep
   // working.
   const supabaseConfigured = isSupabaseConfigured();
+  const envDiag = `URL=${process.env.NEXT_PUBLIC_SUPABASE_URL ? "set" : "MISSING"} SRK=${process.env.SUPABASE_SERVICE_ROLE_KEY ? "set" : "MISSING"} ANON=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "set" : "MISSING"}`;
   console.log(
-    `[qa] gate-attempt email=${email || "(empty)"} configured=${supabaseConfigured}`,
+    `[qa] gate-attempt email=${email || "(empty)"} configured=${supabaseConfigured} env=${envDiag}`,
   );
   if (supabaseConfigured) {
     if (!email || !EMAIL_RE.test(email) || email.length > 254) {

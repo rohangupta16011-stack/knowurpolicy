@@ -31,9 +31,19 @@ export type TokenResult =
   | { valid: false; reason: "malformed" | "expired" | "bad_signature" };
 
 export function verifyDownloadToken(token: string): TokenResult {
-  const parts = token.split(".");
-  if (parts.length !== 3) return { valid: false, reason: "malformed" };
-  const [email, expiresAtStr, signature] = parts;
+  // Email can contain dots (e.g. rohan.gupta190@gmail.com), so split from the
+  // right: last segment is signature, segment before it is expiresAt, and
+  // everything earlier is the email (which may itself contain dots).
+  const lastDot = token.lastIndexOf(".");
+  if (lastDot <= 0) return { valid: false, reason: "malformed" };
+  const signature = token.slice(lastDot + 1);
+  const beforeSig = token.slice(0, lastDot);
+
+  const secondLastDot = beforeSig.lastIndexOf(".");
+  if (secondLastDot <= 0) return { valid: false, reason: "malformed" };
+  const expiresAtStr = beforeSig.slice(secondLastDot + 1);
+  const email = beforeSig.slice(0, secondLastDot);
+
   if (!email || !expiresAtStr || !signature) {
     return { valid: false, reason: "malformed" };
   }

@@ -254,13 +254,6 @@ export default function TermsPage() {
         </Link>
         .
       </P>
-
-      <Note>
-        These terms are a working draft. They should be reviewed by a
-        qualified attorney before scaling to material payment volumes,
-        particularly the limitation-of-liability, governing-law, and dispute
-        resolution clauses.
-      </Note>
     </LegalPageLayout>
   );
 }

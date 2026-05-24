@@ -281,13 +281,6 @@ export default function PrivacyPage() {
         </Link>
         .
       </P>
-
-      <Note>
-        This policy reflects the product&apos;s current data practices in
-        plain English. It should be reviewed by a qualified attorney before
-        material expansion of data collection or before launch in regulated
-        markets.
-      </Note>
     </LegalPageLayout>
   );
 }

@@ -22,6 +22,8 @@ import LegalDisclaimer from "@/components/LegalDisclaimer";
 import Nav from "@/components/Nav";
 import PaymentButton from "@/components/PaymentButton";
 import QAPanel from "@/components/QAPanel";
+import SignInPrompt from "@/components/SignInPrompt";
+import { isSupabaseBrowserConfigured, supabaseBrowser } from "@/lib/supabase";
 import type { AnalysisResult, ClauseItem } from "@/lib/types";
 
 type Stage =
@@ -41,6 +43,45 @@ type Stage =
 
 const MAX_BYTES = 10 * 1024 * 1024;
 
+// Key for sessionStorage save+restore of analysis state across the Google
+// OAuth round-trip. Cleared once restored.
+const ANALYSIS_STASH_KEY = "kup:analysis-stash:v1";
+
+type AnalysisStash = {
+  analysis: AnalysisResult;
+  filename: string;
+  documentText: string;
+  email: string;
+  /** True when the stash was written specifically to trigger a download after sign-in. */
+  triggerDownload?: boolean;
+};
+
+function stashAnalysis(stash: AnalysisStash) {
+  try {
+    sessionStorage.setItem(ANALYSIS_STASH_KEY, JSON.stringify(stash));
+  } catch {
+    // Storage quota / private mode — fall through, user just won't auto-restore.
+  }
+}
+
+function readAnalysisStash(): AnalysisStash | null {
+  try {
+    const raw = sessionStorage.getItem(ANALYSIS_STASH_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as AnalysisStash;
+  } catch {
+    return null;
+  }
+}
+
+function clearAnalysisStash() {
+  try {
+    sessionStorage.removeItem(ANALYSIS_STASH_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 const PROCESSING_STAGES = [
   "Reading your document",
   "Identifying key clauses",
@@ -56,6 +97,36 @@ export default function AnalyzePage() {
   const [stage, setStage] = useState<Stage>({ kind: "idle" });
   // Email survives across re-analyses (user enters once, keeps going).
   const [email, setEmail] = useState("");
+  // Set when restored from sessionStorage post-OAuth — tells DownloadCard
+  // to auto-trigger the download flow as soon as the user is back.
+  const [autoDownloadAfterAuth, setAutoDownloadAfterAuth] = useState(false);
+
+  // Restore analysis after the OAuth round-trip. Triggered by /auth/callback
+  // bouncing the user back to /analyze?restore=1.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("restore") !== "1") return;
+
+    const stash = readAnalysisStash();
+    if (stash) {
+      setStage({
+        kind: "done",
+        analysis: stash.analysis,
+        filename: stash.filename,
+        documentText: stash.documentText,
+      });
+      setEmail(stash.email);
+      setAutoDownloadAfterAuth(Boolean(stash.triggerDownload));
+      clearAnalysisStash();
+    }
+
+    // Strip the ?restore=1 (and any auth_error) so a reload doesn't re-trigger.
+    params.delete("restore");
+    params.delete("auth_error");
+    const qs = params.toString();
+    window.history.replaceState({}, "", qs ? `?${qs}` : window.location.pathname);
+  }, []);
 
   function pickFile(file: File | null) {
     if (!file) return;
@@ -187,6 +258,8 @@ export default function AnalyzePage() {
             filename={stage.filename}
             documentText={stage.documentText}
             email={email}
+            autoDownloadAfterAuth={autoDownloadAfterAuth}
+            onAutoDownloadConsumed={() => setAutoDownloadAfterAuth(false)}
             onReset={() => setStage({ kind: "idle" })}
           />
         )}
@@ -543,12 +616,16 @@ function ResultsView({
   filename,
   documentText,
   email,
+  autoDownloadAfterAuth,
+  onAutoDownloadConsumed,
   onReset,
 }: {
   analysis: AnalysisResult;
   filename: string;
   documentText: string;
   email: string;
+  autoDownloadAfterAuth: boolean;
+  onAutoDownloadConsumed: () => void;
   onReset: () => void;
 }) {
   const [qaOpen, setQaOpen] = useState(false);
@@ -631,6 +708,9 @@ function ResultsView({
         email={email}
         analysis={analysis}
         filename={filename}
+        documentText={documentText}
+        autoDownloadAfterAuth={autoDownloadAfterAuth}
+        onAutoDownloadConsumed={onAutoDownloadConsumed}
         onAsk={() => setQaOpen(true)}
         onReset={onReset}
       />
@@ -701,6 +781,9 @@ function NextStepsBar({
   email,
   analysis,
   filename,
+  documentText,
+  autoDownloadAfterAuth,
+  onAutoDownloadConsumed,
   onAsk,
   onReset,
 }: {
@@ -708,6 +791,9 @@ function NextStepsBar({
   email: string;
   analysis: AnalysisResult;
   filename: string;
+  documentText: string;
+  autoDownloadAfterAuth: boolean;
+  onAutoDownloadConsumed: () => void;
   onAsk: () => void;
   onReset: () => void;
 }) {
@@ -737,7 +823,14 @@ function NextStepsBar({
       </p>
 
       {/* Download as PDF — paywalled, region-aware price (cheaper than analysis) */}
-      <DownloadCard email={email} analysis={analysis} filename={filename} />
+      <DownloadCard
+        email={email}
+        analysis={analysis}
+        filename={filename}
+        documentText={documentText}
+        autoDownloadAfterAuth={autoDownloadAfterAuth}
+        onAutoDownloadConsumed={onAutoDownloadConsumed}
+      />
 
       {/* Secondary — buy another analysis via Razorpay. Region-aware price
           is resolved server-side at order-creation time. */}
@@ -775,16 +868,24 @@ function NextStepsBar({
  * returns a short-lived signed token; we immediately POST it (with the
  * analysis JSON + filename) to /api/download/pdf and trigger a file save.
  *
- * No Supabase needed for this path — the signed token is enough.
+ * Auth gate: when Supabase is configured, we require Google sign-in before
+ * showing the payment button. When Supabase isn't configured (e.g. local dev
+ * without env vars), we skip the gate so the flow still works.
  */
 function DownloadCard({
   email,
   analysis,
   filename,
+  documentText,
+  autoDownloadAfterAuth,
+  onAutoDownloadConsumed,
 }: {
   email: string;
   analysis: AnalysisResult;
   filename: string;
+  documentText: string;
+  autoDownloadAfterAuth: boolean;
+  onAutoDownloadConsumed: () => void;
 }) {
   type DownloadState =
     | { kind: "ready" }
@@ -792,7 +893,48 @@ function DownloadCard({
     | { kind: "done" }
     | { kind: "error"; message: string };
 
+  type AuthState =
+    | { kind: "skipped" } // Supabase not configured — show payment directly
+    | { kind: "loading" }
+    | { kind: "signed_out" }
+    | { kind: "signed_in"; userEmail: string | null };
+
+  const supabaseConfigured = isSupabaseBrowserConfigured();
+
   const [state, setState] = useState<DownloadState>({ kind: "ready" });
+  const [auth, setAuth] = useState<AuthState>(
+    supabaseConfigured ? { kind: "loading" } : { kind: "skipped" },
+  );
+
+  // Subscribe to Supabase auth state — covers the post-OAuth redirect case
+  // where the session lands after this component first mounts.
+  useEffect(() => {
+    if (!supabaseConfigured) return;
+    const supabase = supabaseBrowser();
+
+    let cancelled = false;
+    supabase.auth.getUser().then(({ data }) => {
+      if (cancelled) return;
+      setAuth(
+        data.user
+          ? { kind: "signed_in", userEmail: data.user.email ?? null }
+          : { kind: "signed_out" },
+      );
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuth(
+        session?.user
+          ? { kind: "signed_in", userEmail: session.user.email ?? null }
+          : { kind: "signed_out" },
+      );
+    });
+
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+  }, [supabaseConfigured]);
 
   async function fetchAndSavePdf(token: string) {
     setState({ kind: "downloading" });
@@ -831,8 +973,41 @@ function DownloadCard({
     }
   }
 
+  // After a sign-in round-trip, the parent flags autoDownloadAfterAuth=true.
+  // Once we know the user is signed in, consume the flag (so a re-render or
+  // navigation doesn't re-trigger) and surface the payment step. We don't
+  // auto-open Razorpay — that'd be jarring after an OAuth redirect — but the
+  // user lands directly on the "Pay & download" CTA in the right spot.
+  useEffect(() => {
+    if (!autoDownloadAfterAuth) return;
+    if (auth.kind === "signed_in") {
+      onAutoDownloadConsumed();
+      // Scroll the card into view so the user sees where they left off.
+      if (typeof window !== "undefined") {
+        const card = document.getElementById("download-card");
+        card?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+  }, [autoDownloadAfterAuth, auth.kind, onAutoDownloadConsumed]);
+
+  function stashBeforeSignIn() {
+    stashAnalysis({
+      analysis,
+      filename,
+      documentText,
+      email,
+      triggerDownload: true,
+    });
+  }
+
+  const showPaymentUI =
+    auth.kind === "skipped" || auth.kind === "signed_in";
+
   return (
-    <div className="mt-5 rounded-lg border border-ink-12 bg-white p-4">
+    <div
+      id="download-card"
+      className="mt-5 rounded-lg border border-ink-12 bg-white p-4"
+    >
       <div className="flex items-center gap-2">
         <span className="grid h-8 w-8 flex-none place-items-center rounded-md bg-amber-soft text-amber">
           <Download className="h-4 w-4" />
@@ -848,21 +1023,36 @@ function DownloadCard({
       </div>
 
       <div className="mt-4">
-        {state.kind === "downloading" && (
+        {auth.kind === "loading" && (
+          <div className="flex items-center justify-center gap-2 rounded-md border border-ink-12 bg-cream px-3 py-2.5 text-sm text-navy-mid">
+            <Loader className="h-4 w-4 animate-spin text-amber" />
+            Checking sign-in…
+          </div>
+        )}
+
+        {auth.kind === "signed_out" && (
+          <SignInPrompt
+            email={email}
+            onBeforeRedirect={stashBeforeSignIn}
+            redirectNext="/analyze?restore=1"
+          />
+        )}
+
+        {showPaymentUI && state.kind === "downloading" && (
           <div className="flex items-center justify-center gap-2 rounded-md border border-ink-12 bg-cream px-3 py-2.5 text-sm text-navy">
             <Loader className="h-4 w-4 animate-spin text-amber" />
             Generating your PDF…
           </div>
         )}
 
-        {state.kind === "done" && (
+        {showPaymentUI && state.kind === "done" && (
           <div className="flex items-center justify-center gap-2 rounded-md border border-flag-g-text/30 bg-flag-g-bg px-3 py-2.5 text-sm font-semibold text-flag-g-text">
             <Check className="h-4 w-4 flex-none" /> Download started — check
             your browser&apos;s downloads folder
           </div>
         )}
 
-        {state.kind === "error" && (
+        {showPaymentUI && state.kind === "error" && (
           <div className="space-y-2">
             <div
               role="alert"
@@ -881,7 +1071,7 @@ function DownloadCard({
           </div>
         )}
 
-        {state.kind === "ready" && (
+        {showPaymentUI && state.kind === "ready" && (
           <PaymentButton
             email={email}
             product="download"
@@ -890,6 +1080,12 @@ function DownloadCard({
               if (res.downloadToken) fetchAndSavePdf(res.downloadToken);
             }}
           />
+        )}
+
+        {auth.kind === "signed_in" && auth.userEmail && (
+          <p className="mt-2 text-center text-[11px] text-navy-mid">
+            Signed in as {auth.userEmail}
+          </p>
         )}
       </div>
     </div>

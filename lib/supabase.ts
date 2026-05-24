@@ -26,6 +26,18 @@ export function supabaseBrowser() {
   );
 }
 
+/**
+ * True when the browser-side Supabase env vars are present. Use this to skip
+ * auth-gated UI in dev when Supabase isn't wired up yet — calling
+ * `supabaseBrowser()` would otherwise throw at render time.
+ */
+export function isSupabaseBrowserConfigured(): boolean {
+  return Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  );
+}
+
 export function supabaseServer() {
   const cookieStore = cookies();
   return createServerClient(

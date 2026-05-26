@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>KnowUrPolicy — Growth Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  :root {
+    --navy: #0a2540;
+    --navy-mid: #15406b;
+    --navy-soft: #4b6584;
+    --amber: #c96a00;
+    --amber-soft: #fae8d0;
+    --cream: #faf8f5;
+    --ink-12: #e2dcd3;
+    --ink-22: #cbc4b8;
+    --green-text: #0a6640;
+    --green-bg: #e8f7ef;
+    --yellow-text: #7a5500;
+    --yellow-bg: #fff8dc;
+    --red-text: #a01515;
+    --red-bg: #fef0f0;
+  }
+
+  * { box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 88px;
+  }
+
+  body {
+    margin: 0;
+    background: var(--cream);
+    color: var(--navy);
+    font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 56px 28px 96px;
+  }
+
+  /* Header */
+  .hero {
+    border-bottom: 1px solid var(--ink-12);
+    padding-bottom: 32px;
+    margin-bottom: 48px;
+  }
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--amber);
+  }
+  h1 {
+    font-family: "Playfair Display", serif;
+    font-size: 44px;
+    font-weight: 800;
+    line-height: 1.05;
+    margin: 12px 0 8px;
+    color: var(--navy);
+  }
+  .lede {
+    font-size: 17px;
+    color: var(--navy-mid);
+    margin-top: 12px;
+  }
+  .meta {
+    font-size: 12px;
+    color: var(--navy-soft);
+    margin-top: 12px;
+  }
+
+  /* Nav / TOC */
+  nav.toc {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(250, 248, 245, 0.92);
+    backdrop-filter: saturate(180%) blur(8px);
+    -webkit-backdrop-filter: saturate(180%) blur(8px);
+    border-bottom: 1px solid var(--ink-12);
+    padding: 14px 28px;
+    margin: -56px -28px 48px;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  nav.toc a {
+    display: inline-block;
+    color: var(--navy-mid);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    margin-right: 20px;
+    border-bottom: 2px solid transparent;
+    padding-bottom: 2px;
+  }
+  nav.toc a:hover {
+    color: var(--amber);
+    border-bottom-color: var(--amber);
+  }
+
+  /* Sections */
+  section {
+    margin-bottom: 56px;
+  }
+  h2 {
+    font-family: "Playfair Display", serif;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--navy);
+    margin: 0 0 16px;
+    padding-top: 8px;
+  }
+  h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--navy);
+    margin: 28px 0 10px;
+  }
+  h4 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--amber);
+    font-weight: 700;
+    margin: 24px 0 8px;
+  }
+  p {
+    margin: 0 0 14px;
+    color: var(--navy);
+  }
+  p.muted {
+    color: var(--navy-mid);
+  }
+
+  /* Lists */
+  ul, ol {
+    margin: 0 0 18px;
+    padding-left: 22px;
+  }
+  ul li, ol li {
+    margin-bottom: 8px;
+  }
+  ul li::marker {
+    color: var(--amber);
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #ffffff;
+    border: 1px solid var(--ink-12);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 18px 0 24px;
+    font-size: 14px;
+  }
+  th, td {
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--ink-12);
+    vertical-align: top;
+  }
+  th {
+    background: var(--cream);
+    font-weight: 700;
+    color: var(--navy);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  tr:last-child td { border-bottom: 0; }
+  td strong { color: var(--navy); }
+
+  /* Callouts */
+  .callout {
+    border-left: 4px solid var(--amber);
+    background: #ffffff;
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 18px 0;
+    font-size: 14.5px;
+  }
+  .callout.success {
+    border-color: var(--green-text);
+    background: var(--green-bg);
+    color: var(--green-text);
+  }
+  .callout.warn {
+    border-color: var(--yellow-text);
+    background: var(--yellow-bg);
+    color: var(--yellow-text);
+  }
+  .callout.danger {
+    border-color: var(--red-text);
+    background: var(--red-bg);
+    color: var(--red-text);
+  }
+
+  /* Code */
+  pre, code {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco,
+      Consolas, "Courier New", monospace;
+  }
+  code {
+    background: var(--ink-12);
+    color: var(--navy);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  pre {
+    background: var(--navy);
+    color: #f4ecde;
+    padding: 18px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 13.5px;
+    line-height: 1.5;
+    margin: 14px 0 22px;
+  }
+  pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+  }
+
+  /* DM template block */
+  blockquote {
+    margin: 14px 0 22px;
+    padding: 16px 22px;
+    border-left: 4px solid var(--navy);
+    background: #ffffff;
+    border-radius: 0 6px 6px 0;
+    color: var(--navy);
+    font-style: italic;
+    font-size: 14.5px;
+  }
+
+  /* Status pill */
+  .pill {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .pill.now { background: var(--amber-soft); color: var(--amber); }
+  .pill.next { background: var(--ink-12); color: var(--navy-mid); }
+
+  /* Numbered channel cards */
+  .channel {
+    border: 1px solid var(--ink-12);
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 20px 22px;
+    margin-bottom: 14px;
+  }
+  .channel .num {
+    font-family: "Playfair Display", serif;
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--amber);
+    margin-right: 8px;
+  }
+  .channel h3 {
+    display: inline;
+    font-size: 17px;
+    margin: 0;
+  }
+  .channel .tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--navy-soft);
+    margin-left: 6px;
+  }
+
+  /* Footer */
+  footer {
+    margin-top: 80px;
+    padding-top: 28px;
+    border-top: 1px solid var(--ink-12);
+    color: var(--navy-soft);
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  footer a { color: var(--amber); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* Print styles — for "Save as PDF" use */
+  @media print {
+    nav.toc { display: none; }
+    body { background: #ffffff; }
+    .wrap { padding: 0; max-width: none; }
+    pre, table, .callout { page-break-inside: avoid; }
+    h1, h2 { page-break-after: avoid; }
+  }
+
+  @media (max-width: 640px) {
+    h1 { font-size: 32px; }
+    h2 { font-size: 24px; }
+    .wrap { padding: 32px 18px 64px; }
+    nav.toc { margin: -32px -18px 32px; padding: 12px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="toc" aria-label="Table of contents">
+  <a href="#where">Where you are</a>
+  <a href="#north-star">North star</a>
+  <a href="#wedge">Pick a wedge</a>
+  <a href="#channels">Channels</a>
+  <a href="#pricing">Pricing</a>
+  <a href="#conversion">Conversion</a>
+  <a href="#milestones">Milestones</a>
+  <a href="#testimonials">Testimonials</a>
+  <a href="#cadence">Weekly cadence</a>
+  <a href="#anti-goals">Anti-goals</a>
+</nav>
+
+<div class="wrap">
+
+<header class="hero">
+  <div class="eyebrow">KnowUrPolicy</div>
+  <h1>Growth Plan</h1>
+  <p class="lede">
+    A 90-day plan to get from 5 mostly-self-test users to 500 real
+    activated ones. Concrete, prioritised, anti-fluff.
+  </p>
+  <div class="meta">Living document · last updated 2026-05-26</div>
+</header>
+
+<!-- ========================================================== -->
+<section id="where">
+  <h2>Where you are right now</h2>
+  <ul>
+    <li>Product is live at <a href="https://knowurpolicy.com">knowurpolicy.com</a></li>
+    <li>~5 activated users, mostly your own test traffic</li>
+    <li>~₹0 real revenue (all live charges so far were tests)</li>
+    <li>Solo founder, no marketing budget allocated</li>
+    <li>Razorpay live mode active for India + International</li>
+    <li>Full stack: free + paid analysis, paid PDF, paid Q&amp;A bundle, region-aware pricing</li>
+  </ul>
+
+  <div class="callout warn">
+    <strong>The bottleneck is distribution, not product.</strong> Don't add
+    features for the next 90 days unless paying users explicitly ask for them.
+  </div>
+</section>
+
+<!-- ========================================================== -->
+<section id="north-star">
+  <h2>The North Star metric: weekly <em>activated</em> users</h2>
+  <p class="muted">
+    Track this every Sunday. Goal trajectory:
+  </p>
+  <table>
+    <thead>
+      <tr><th>Week</th><th>Activated users (cumulative)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Now</td><td>~5 (mostly you)</td></tr>
+      <tr><td>+30d</td><td>50 real users</td></tr>
+      <tr><td>+60d</td><td>200</td></tr>
+      <tr><td>+90d</td><td>500</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Everything else (revenue, conversion, retention) is downstream. If
+    activated isn't growing, no other metric will.
+  </p>
+  <h4>Query to run every Sunday</h4>
+<pre><code>select date_trunc('week', first_seen_at)::date as week,
+       count(*)                                  as new_activated
+from email_usage
+where free_used
+  and email not in ('rohan190@gmail.com')
+group by 1 order by 1 desc;</code></pre>
+</section>
+
+<!-- ========================================================== -->
+<section id="wedge">
+  <h2>Pick ONE wedge — don't market "any document"</h2>
+  <p>
+    Your product <em>can</em> read anything. Your marketing must promise one
+    specific thing.
+  </p>
+
+  <h3>Recommended wedge: Rental agreements in Indian metros</h3>
+  <table>
+    <thead>
+      <tr><th>Why</th><th>Detail</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Acute pain</strong></td>
+        <td>Renter has ₹50,000–₹2,00,000 deposit at risk. ₹99 to de-risk is a no-brainer trade.</td>
+      </tr>
+      <tr>
+        <td><strong>High volume</strong></td>
+        <td>Millions of fresh rental agreements signed every year in Bangalore / Mumbai / Pune / Hyderabad / NCR.</td>
+      </tr>
+      <tr>
+        <td><strong>Distribution exists</strong></td>
+        <td>Active subreddits (r/bangalore, r/mumbai, r/india_real_estate), Twitter, Telegram broker groups, NoBroker / MagicBricks forums.</td>
+      </tr>
+      <tr>
+        <td><strong>Clear language win</strong></td>
+        <td>Hindi-English landlord clauses are notoriously hostile. The "translate this jargon" value is obvious.</td>
+      </tr>
+      <tr>
+        <td><strong>Repeat-customer-ish</strong></td>
+        <td>People move every 11 months in metros. Email captured → next renewal is 11 months away → you have inbox real estate.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Backup wedge to test in parallel: Job offer letters &amp; NDAs</h3>
+  <p>
+    Faster decision cycle (signing within days), tech-worker audience that's
+    already English-comfortable and online. Smaller TAM than rentals, but
+    better intent-to-pay ratio. Distribute via Blind, LinkedIn, tech Twitter.
+  </p>
+
+  <h3>Wedges NOT to chase yet</h3>
+  <ul>
+    <li>General "any contract" — too vague, no clear search intent</li>
+    <li>Insurance policies — slow buying cycle, customer waits years between purchases</li>
+    <li>Freelancer contracts — small audience, will get there for free via Twitter</li>
+    <li>B2B / legal teams — different sales motion, requires you to do enterprise</li>
+  </ul>
+
+  <div class="callout">
+    <strong>Action by end of week 1:</strong> add a <code>/lease</code>
+    landing page that says "KnowUrPolicy for rental agreements" with 3
+    example clauses analysed (redacted real PDF). Same backend, different
+    framing. Use it in DMs.
+  </div>
+</section>
+
+<!-- ========================================================== -->
+<section id="channels">
+  <h2>Channel ladder <span class="pill now">in order of leverage</span></h2>
+
+  <div class="channel">
+    <span class="num">1.</span><h3>Cold DMs in Reddit comments + Twitter mentions</h3>
+    <span class="tag">free · week 1</span>
+    <p>
+      Highest-leverage move when activated &lt; 50. You're trading time for
+      users 1-on-1, which doesn't scale — but you learn what makes them say yes.
+    </p>
+    <h4>Where to look every day for 30 days</h4>
+    <ul>
+      <li>r/bangalore / r/mumbai / r/pune / r/delhi / r/india / r/india_real_estate</li>
+      <li>Search: "rental agreement", "landlord", "deposit", "lease", "11 months"</li>
+      <li>Twitter advanced search: same terms, last 7 days, India-located</li>
+    </ul>
+    <h4>The DM template (rentals)</h4>
+    <blockquote>
+      Hey — saw your post about [specific thing they said]. I built a tool
+      that reads rental agreements and pulls out the unfair clauses + deposit
+      traps in plain English. Takes 30 seconds. Want me to run yours? Free,
+      no account needed for the first one. knowurpolicy.com
+    </blockquote>
+    <p>
+      Personalise the first sentence every time. Hit send <strong>5x per day,
+      5 days a week = 100 personal DMs / month</strong>. Expect 20% response,
+      5% activation = ~5 real users from this channel alone, probably more
+      once you have testimonials.
+    </p>
+    <p class="muted">
+      Track in a simple Google Sheet: date, channel, link, response Y/N,
+      activated Y/N, notes. After 30 DMs you'll know what hook works.
+    </p>
+  </div>
+
+  <div class="channel">
+    <span class="num">2.</span><h3>Build-in-public Twitter</h3>
+    <span class="tag">free · week 1 onwards</span>
+    <p>3 tweets / week. Mix:</p>
+    <ul>
+      <li><strong>Behind-the-scenes:</strong> "Just shipped Razorpay live mode. Here's what fired 3x for one payment — and how I fixed it."</li>
+      <li><strong>Specific value:</strong> "I ran a Bangalore PG agreement through my tool. Here are 3 deposit clauses landlords always hide."</li>
+      <li><strong>Public asks:</strong> "Looking for 10 renters in Bangalore to free-test KnowUrPolicy. DM me."</li>
+    </ul>
+    <p>
+      Tag <code>@indiestartups</code>, <code>@buildspace</code>,
+      <code>@_paaglu_</code> etc. on threads about problems your tool solves.
+      Founders with audiences amplify other founders.
+    </p>
+    <div class="callout warn">
+      Stop the "tweet about my tool" cycle if you haven't crossed 100
+      followers in 60 days — your content isn't resonating, switch to
+      commenting on existing big accounts instead.
+    </div>
+  </div>
+
+  <div class="channel">
+    <span class="num">3.</span><h3>SEO long-tail content</h3>
+    <span class="tag">slow burn · week 4 onwards</span>
+    <p>Pick 1 article / week. Each targets a specific long-tail query:</p>
+    <ul>
+      <li>"What is a lock-in period in Indian rental agreements?"</li>
+      <li>"Standard security deposit clauses to look for in Bangalore leases"</li>
+      <li>"Notice period in rental agreements — what's normal vs predatory?"</li>
+      <li>"Indian rental agreement red flags 2026"</li>
+      <li>"PG agreement vs rental agreement: what's the difference?"</li>
+    </ul>
+    <p>
+      Each article is ~1500 words, ends with "Run your own analysis →
+      knowurpolicy.com/lease". Internal-link the articles to each other.
+      Set canonical URL. Use the existing JSON-LD setup as a template.
+    </p>
+    <p>
+      These take 3–6 months to rank but <strong>compound forever</strong>.
+      By month 6 you should own a handful of long-tail queries that send
+      10–30 visits / day each.
+    </p>
+  </div>
+
+  <div class="channel">
+    <span class="num">4.</span><h3>Product Hunt launch</h3>
+    <span class="tag">one shot · month 2 or 3</span>
+    <p>Wait until:</p>
+    <ul>
+      <li>You have 10 real testimonials on the homepage</li>
+      <li>You have 100+ activated users (so the launch metrics look good)</li>
+      <li>A launch tweet thread is pre-written</li>
+    </ul>
+    <p>
+      Then launch on a Wednesday. Aim for top 5 of the day. Expect a one-time
+      spike of 500–2000 visits, ~50–200 new activations, and credibility you
+      can name-drop forever ("featured on Product Hunt").
+    </p>
+  </div>
+
+  <div class="channel">
+    <span class="num">5.</span><h3>Indian community lurks</h3>
+    <span class="tag">low effort · high signal</span>
+    <ul>
+      <li>Indie Hackers — post a milestones thread when you cross ₹10k MRR</li>
+      <li>IndianStartups — share learnings, not promos</li>
+      <li>Y Combinator / 0to1 / Foundercrate communities — answer questions</li>
+      <li>Maharaj-Founders, Antler / Z Fellows / On Deck if you applied — say it</li>
+    </ul>
+    <p>
+      The goal here is <strong>discovery, not direct conversion</strong>.
+      People remember the name. When their lease renewal comes up 6 months
+      later, they remember "that AI policy thing".
+    </p>
+  </div>
+
+  <h3>Things to defer</h3>
+  <ul>
+    <li><strong>Paid ads</strong> (Google, Meta, Twitter) — CAC unknown. Burn money for experience, not for revenue. Defer until you have 200+ activated users and know which segment converts.</li>
+    <li><strong>Influencer / creator partnerships</strong> — same reason.</li>
+    <li><strong>B2B / enterprise / law-firm pitches</strong> — different sales motion.</li>
+    <li><strong>SEO content beyond long-tail</strong> (e.g. competing on "AI contract analysis" head term) — wasted effort, will get drowned out by VC-funded competitors.</li>
+  </ul>
+</section>
+
+<!-- ========================================================== -->
+<section id="pricing">
+  <h2>Pricing levers worth testing</h2>
+  <p>Don't touch prices for 90 days. After that, the cheap-to-test variants:</p>
+  <table>
+    <thead>
+      <tr><th>Test</th><th>Hypothesis</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>5-pack analysis bundle at ₹399 instead of ₹99 × 5</td>
+        <td>Some users have multiple docs (renter + employment); a small bundle discount drives larger transactions</td>
+      </tr>
+      <tr>
+        <td>Lock-in deals: ₹999 / year unlimited for power users</td>
+        <td>Long-tail price discovery; might convert lawyers / brokers</td>
+      </tr>
+      <tr>
+        <td>Region tier 3 down to $0.99 from $1.49</td>
+        <td>Africa / Latin America / SEA volume</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    Test one at a time. Run for 30 days each. Roll back if revenue/user drops
+    more than 10%.
+  </p>
+</section>
+
+<!-- ========================================================== -->
+<section id="conversion">
+  <h2>Conversion levers <span class="pill next">when activated &gt; 100</span></h2>
+  <p>You currently have <strong>no idea</strong> where users drop off. To find out:</p>
+  <ol>
+    <li>
+      Add GA4 funnel events (you have GA wired up) for:
+      <ul>
+        <li><code>analyze_started</code> (file picked)</li>
+        <li><code>analyze_completed</code> (results shown)</li>
+        <li><code>download_clicked</code> (free-tier paywall)</li>
+        <li><code>download_paid</code> (success)</li>
+        <li><code>qa_opened</code></li>
+        <li><code>qa_paid</code></li>
+      </ul>
+    </li>
+    <li>Look at funnel after 2 weeks of data.</li>
+    <li>Fix the worst step first.</li>
+  </ol>
+  <p>Typical wins to try once you can see the funnel:</p>
+  <ul>
+    <li>Faster analysis time (currently 30–45s; if Vercel Pro unblocks 300s timeout, you can also bump the per-section item cap from 8 back to unlimited)</li>
+    <li>Bigger / louder Download CTA on the preview view</li>
+    <li>"Trusted by N renters in Bangalore" social proof above the upload box</li>
+  </ul>
+</section>
+
+<!-- ========================================================== -->
+<section id="milestones">
+  <h2>Roadmap of milestones, not features</h2>
+  <table>
+    <thead>
+      <tr><th>Milestone</th><th>Target</th><th>Done?</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>First real (non-test) activated user</td><td>Week 1</td><td></td></tr>
+      <tr><td>10 real activated users</td><td>Week 2</td><td></td></tr>
+      <tr><td>First real ₹99 paying user</td><td>Week 2–3</td><td></td></tr>
+      <tr><td>5 written testimonials on homepage</td><td>Week 4</td><td></td></tr>
+      <tr><td>50 real activated users</td><td>Week 4</td><td></td></tr>
+      <tr><td>First piece of SEO content live</td><td>Week 4</td><td></td></tr>
+      <tr><td>₹5,000 real revenue in a single week</td><td>Week 8</td><td></td></tr>
+      <tr><td>200 real activated users</td><td>Week 8</td><td></td></tr>
+      <tr><td>Product Hunt launch</td><td>Week 10–12</td><td></td></tr>
+      <tr><td>₹25,000 / month run-rate</td><td>Week 12</td><td></td></tr>
+      <tr><td>500 activated users</td><td>Week 12</td><td></td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    If a milestone slips by &gt;2 weeks, write down honestly <em>why</em>.
+    Pattern-match across slipped milestones — that's usually where your real
+    bottleneck is (positioning, channel mismatch, product quality, time
+    available).
+  </div>
+</section>
+
+<!-- ========================================================== -->
+<section id="testimonials">
+  <h2>Testimonial-collection playbook</h2>
+  <p>Every free-tier user who completed analysis → email them 24h later:</p>
+  <blockquote>
+    Hi [name] — I noticed you ran [doc name] through KnowUrPolicy yesterday.
+    Did the analysis catch anything you didn't already know? I'm collecting
+    short testimonials to help other people decide whether to try it — would
+    you be open to sharing one sentence I can put on the site (with your first
+    name + city)? No worries either way.
+  </blockquote>
+  <p>
+    Expect 30–50% reply rate while you're small. Each "yes" → put on homepage.
+    By 20 testimonials, you have proof. Don't fabricate.
+  </p>
+</section>
+
+<!-- ========================================================== -->
+<section id="cadence">
+  <h2>Weekly cadence</h2>
+  <p>Set a 30-minute calendar slot every <strong>Sunday evening</strong>:</p>
+  <ol>
+    <li>Run the 3 SQL queries from <code>supabase/queries.sql</code> sections A and B.</li>
+    <li>Update the "Where you are right now" section at the top of this file.</li>
+    <li>Update the milestone table.</li>
+    <li>Write one sentence: "what worked this week, what didn't, what to try next."</li>
+  </ol>
+  <div class="callout success">
+    Compounds. After 12 weeks you have a journal that's worth gold.
+  </div>
+</section>
+
+<!-- ========================================================== -->
+<section id="success">
+  <h2>What success at +90 days looks like</h2>
+  <ul>
+    <li>500 activated users (~10 / day inbound, half organic)</li>
+    <li>~50 paying customers</li>
+    <li>₹25,000–₹50,000 monthly revenue</li>
+    <li>1 SEO page ranking in top 10 for a long-tail rental query</li>
+    <li>10+ testimonials live</li>
+    <li>One viral tweet thread (&gt;500 likes)</li>
+    <li>A clear answer to "what's the single channel pulling most of my growth"</li>
+  </ul>
+  <p>
+    If you have those, you know where to invest the next quarter (probably in
+    that single channel, harder).
+  </p>
+  <p>
+    If you don't have those at +90 days, the wedge or the positioning is wrong.
+    Switch wedges (try offer letters) before assuming the product or the price
+    is wrong.
+  </p>
+</section>
+
+<!-- ========================================================== -->
+<section id="anti-goals">
+  <h2>Anti-goals — the things that look like progress but aren't</h2>
+  <ul>
+    <li>Adding new document types beyond the wedge</li>
+    <li>Building a CRM, an admin dashboard, a subscription tier</li>
+    <li>Networking events / meetups (low ROI for early SaaS)</li>
+    <li>"Branding" — logo iterations, colour palette swaps</li>
+    <li>Cold email blasts via tools like Apollo (mostly lands in spam)</li>
+    <li>Hiring (you can't afford it and you don't yet know what to delegate)</li>
+  </ul>
+  <div class="callout danger">
+    If you find yourself doing any of these, redirect to the channel ladder.
+  </div>
+</section>
+
+<footer>
+  <span>KnowUrPolicy · Growth Plan · 2026-05-26</span>
+  <span><a href="https://knowurpolicy.com">knowurpolicy.com</a></span>
+</footer>
+
+</div>
+</body>
+</html>

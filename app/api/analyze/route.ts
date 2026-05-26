@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { analyseDocument } from "@/lib/claude";
+import { issueDownloadToken } from "@/lib/download-token";
 import { isDisposableEmail, normalizeEmail } from "@/lib/email-normalize";
 import { extractPdfText } from "@/lib/pdf-extract";
 import { getPricingForCountry } from "@/lib/pricing";
@@ -84,6 +85,10 @@ export async function POST(req: NextRequest) {
   // we let every upload through (degraded mode, useful in dev before
   // Supabase is wired). With Supabase, atomic SQL function decides whether
   // this is a free analysis, paid, or needs payment.
+  // We track the credit type because paid users get the full on-screen
+  // report + an included PDF download token (no extra ₹49 paywall) -- see
+  // the response below.
+  let creditType: "free" | "paid" = "free";
   if (isSupabaseConfigured()) {
     try {
       const { data, error } = await supabaseAdmin().rpc(
@@ -102,6 +107,8 @@ export async function POST(req: NextRequest) {
           },
           { status: 402 },
         );
+      } else if (data === "paid") {
+        creditType = "paid";
       } else if (data === "free") {
         // IP-level backstop: limits unique abusers spinning up many emails
         // from the same network. Only triggers on the free path; paid users
@@ -125,7 +132,6 @@ export async function POST(req: NextRequest) {
           );
         }
       }
-      // else: "paid" — paid credit decremented, IP gate skipped.
     } catch (e) {
       console.error(`[analyze] gate failed: ${e instanceof Error ? e.message : e}`);
     }
@@ -167,11 +173,22 @@ export async function POST(req: NextRequest) {
     // the country (and so we can show only the user's price, not every tier).
     const country = req.headers.get("x-vercel-ip-country");
     const pricing = getPricingForCountry(country);
+    // Paid analyses get the PDF download bundled in -- no extra paywall.
+    // Issue the token here so the client can render a one-click download
+    // straight from the results page. Free users still hit the Razorpay
+    // paywall to upgrade to a PDF.
+    const downloadToken = creditType === "paid" ? issueDownloadToken(email) : null;
     // Return the extracted document text alongside the analysis. The client
     // holds it in session memory to power follow-up Q&A without re-uploading
     // (per PRD §6.4). Server stays zero-retention (§6.6) — the text is not
     // persisted anywhere, it just round-trips through the user's browser.
-    return NextResponse.json({ analysis, documentText: extracted.text, pricing });
+    return NextResponse.json({
+      analysis,
+      documentText: extracted.text,
+      pricing,
+      creditType,
+      downloadToken,
+    });
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
     console.error(`[analyze] model failed for ${file.name}: ${detail}`);

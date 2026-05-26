@@ -8,7 +8,11 @@ import crypto from "node:crypto";
 // Token format: `${email}.${expiresAtMs}.${signature}` where the signature
 // is HMAC-SHA256 over the same string minus the signature, hex-encoded.
 
-const TTL_MS = 10 * 60 * 1000; // 10 minutes — enough for a slow download + retry
+// 60 min window. Long enough that paid-analysis users (who get the token at
+// analysis time, not at a separate payment) have time to read the on-screen
+// report before grabbing the PDF. Free users who pay ₹49 download
+// immediately, so 60 min is generous either way.
+const TTL_MS = 60 * 60 * 1000;
 
 function secret(): string {
   const s = process.env.RAZORPAY_KEY_SECRET;

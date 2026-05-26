@@ -47,6 +47,14 @@ type Stage =
       // Sent back with each Q&A request so the server can answer without storage.
       documentText: string;
       pricing: PricingTier;
+      /** "paid" means the user paid ₹99 for this analysis — they see the
+       *  full report (no preview gating) and get a download token for the
+       *  PDF at no extra cost. "free" preserves the original
+       *  preview-plus-paywall behaviour. */
+      creditType: "free" | "paid";
+      /** Issued by /api/analyze when creditType is "paid". Lets the client
+       *  fetch the PDF without a Razorpay round-trip. */
+      downloadToken: string | null;
     };
 
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -179,7 +187,13 @@ export default function AnalyzePage() {
       form.append("email", email.trim().toLowerCase());
       const res = await fetch("/api/analyze", { method: "POST", body: form });
       const data = (await res.json()) as
-        | { analysis: AnalysisResult; documentText: string; pricing: PricingTier }
+        | {
+            analysis: AnalysisResult;
+            documentText: string;
+            pricing: PricingTier;
+            creditType: "free" | "paid";
+            downloadToken: string | null;
+          }
         | { error: string; message: string };
 
       // 402 from the freemium gate — user has used their free analysis
@@ -200,6 +214,8 @@ export default function AnalyzePage() {
         filename: file.name,
         documentText: data.documentText,
         pricing: data.pricing,
+        creditType: data.creditType,
+        downloadToken: data.downloadToken,
       });
     } catch {
       setStage({ kind: "error", message: "Something went wrong. Please try again." });
@@ -309,6 +325,8 @@ export default function AnalyzePage() {
             documentText={stage.documentText}
             email={email}
             pricing={stage.pricing}
+            creditType={stage.creditType}
+            downloadToken={stage.downloadToken}
             onReset={() => setStage({ kind: "idle" })}
           />
         )}
@@ -673,6 +691,8 @@ function ResultsView({
   documentText,
   email,
   pricing,
+  creditType,
+  downloadToken,
   onReset,
 }: {
   analysis: AnalysisResult;
@@ -680,8 +700,13 @@ function ResultsView({
   documentText: string;
   email: string;
   pricing: PricingTier;
+  creditType: "free" | "paid";
+  downloadToken: string | null;
   onReset: () => void;
 }) {
+  // Paid users get the full report on screen (no per-section preview) and
+  // an included PDF download. Free users keep the preview + paywall flow.
+  const preview = creditType === "free" ? 1 : undefined;
   const [qaOpen, setQaOpen] = useState(false);
 
   // Red-flag count drives the "What next?" hook copy. Sourced from the two
@@ -720,7 +745,7 @@ function ResultsView({
         subtitle="What the document grants or includes."
         tone="green"
         items={analysis.covered}
-        previewCount={1}
+        previewCount={preview}
       />
 
       <AccordionSection
@@ -729,7 +754,7 @@ function ResultsView({
         subtitle="Exclusions, gaps, and topics not addressed in this document."
         tone="red"
         items={analysis.not_covered}
-        previewCount={1}
+        previewCount={preview}
       />
 
       {analysis.watch_list.length > 0 && (
@@ -739,7 +764,7 @@ function ResultsView({
           subtitle="Unusual or restrictive clauses — read carefully."
           tone="red"
           items={analysis.watch_list}
-          previewCount={1}
+          previewCount={preview}
         />
       )}
 
@@ -749,7 +774,7 @@ function ResultsView({
         subtitle="Time windows, caps, and notice periods."
         tone="yellow"
         items={analysis.deadlines_and_limits}
-        previewCount={1}
+        previewCount={preview}
       />
 
       <AccordionSection
@@ -758,7 +783,7 @@ function ResultsView({
         subtitle="What you must do to keep the agreement valid."
         tone="yellow"
         items={analysis.your_obligations}
-        previewCount={1}
+        previewCount={preview}
       />
 
       <NextStepsBar
@@ -768,6 +793,8 @@ function ResultsView({
         filename={filename}
         documentText={documentText}
         pricing={pricing}
+        creditType={creditType}
+        downloadToken={downloadToken}
         onAsk={() => setQaOpen(true)}
         onReset={onReset}
       />
@@ -842,6 +869,8 @@ function NextStepsBar({
   filename,
   documentText,
   pricing,
+  creditType,
+  downloadToken,
   onAsk,
   onReset,
 }: {
@@ -851,11 +880,15 @@ function NextStepsBar({
   filename: string;
   documentText: string;
   pricing: PricingTier;
+  creditType: "free" | "paid";
+  downloadToken: string | null;
   onAsk: () => void;
   onReset: () => void;
 }) {
-  const hook =
-    redCount === 0
+  const isPaid = creditType === "paid";
+  const hook = isPaid
+    ? "Your full report is ready. Download the PDF, or jump back into the clauses above."
+    : redCount === 0
       ? "Document looks standard. Get the full report to read every clause."
       : `You have ${redCount} item${redCount === 1 ? "" : "s"} worth a closer look. Get the full report to read every clause.`;
 
@@ -866,12 +899,14 @@ function NextStepsBar({
       </div>
       <p className="mt-2 text-lg font-display font-bold text-navy">{hook}</p>
 
-      {/* Primary — download the full report (now that on-screen view is a preview) */}
+      {/* Primary — download the full report. Free users see the paywall;
+          paid users get an instant-download button (token already issued). */}
       <DownloadCard
         email={email}
         analysis={analysis}
         filename={filename}
         pricing={pricing}
+        downloadToken={downloadToken}
       />
 
       {/* Secondary — Q&A. Still works against the full document text, just
@@ -936,11 +971,16 @@ function DownloadCard({
   analysis,
   filename,
   pricing,
+  downloadToken,
 }: {
   email: string;
   analysis: AnalysisResult;
   filename: string;
   pricing: PricingTier;
+  /** When non-null, the analysis was paid (₹99) and the PDF is included. We
+   *  render an immediate "Download now" button instead of the Razorpay
+   *  paywall. Null for free-tier analyses (paywall path). */
+  downloadToken: string | null;
 }) {
   type DownloadState =
     | { kind: "ready" }
@@ -987,6 +1027,8 @@ function DownloadCard({
     }
   }
 
+  const isIncluded = downloadToken !== null;
+
   return (
     <div className="mt-5 rounded-lg border border-ink-12 bg-white p-4">
       <div className="flex items-center gap-2">
@@ -994,13 +1036,18 @@ function DownloadCard({
           <Download className="h-4 w-4" />
         </span>
         <div>
-          <div className="text-sm font-semibold text-navy">
+          <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-navy">
             Read the full analysis
+            {isIncluded && (
+              <span className="rounded-full bg-flag-g-bg px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-flag-g-text">
+                Included
+              </span>
+            )}
           </div>
           <div className="text-xs text-navy-mid">
-            On-screen view above is a preview. The PDF has every clause, every
-            risk, and every deadline — save, print, or share it with a
-            partner / lawyer.
+            {isIncluded
+              ? "Your paid analysis includes the full PDF — every clause, every risk, every deadline. Save it, print it, share it."
+              : "On-screen view above is a preview. The PDF has every clause, every risk, and every deadline — save, print, or share it with a partner / lawyer."}
           </div>
         </div>
       </div>
@@ -1020,7 +1067,30 @@ function DownloadCard({
           </div>
         )}
 
-        {state.kind === "error" && (
+        {/* Paid path — token already issued by /api/analyze, one click downloads. */}
+        {isIncluded && (state.kind === "ready" || state.kind === "error") && (
+          <div className="space-y-2">
+            {state.kind === "error" && (
+              <div
+                role="alert"
+                className="rounded-md border border-flag-r-text/30 bg-flag-r-bg px-3 py-2 text-xs text-flag-r-text"
+              >
+                {state.message}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => fetchAndSavePdf(downloadToken!)}
+              className="btn-primary w-full"
+            >
+              <Download className="h-4 w-4" /> Download PDF report
+            </button>
+          </div>
+        )}
+
+        {/* Free path — Razorpay paywall, then fetchAndSavePdf with the
+            short-lived token returned by /api/payment/verify. */}
+        {!isIncluded && state.kind === "error" && (
           <div className="space-y-2">
             <div
               role="alert"
@@ -1040,7 +1110,7 @@ function DownloadCard({
           </div>
         )}
 
-        {state.kind === "ready" && (
+        {!isIncluded && state.kind === "ready" && (
           <PaymentButton
             email={email}
             product="download"

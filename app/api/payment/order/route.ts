@@ -80,19 +80,36 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Persist if Supabase is configured.
+    // Persist if Supabase is configured. supabase-js v2 returns errors in
+    // the response object — it does NOT throw on insert failure — so a
+    // try/catch alone silently swallowed failures. Destructure { error }
+    // and log it explicitly.
     if (isSupabaseConfigured()) {
       try {
-        await supabaseAdmin().from("payments").insert({
-          email,
-          razorpay_order_id: order.id,
-          amount,
-          currency: pricing.currency,
-          status: "created",
-          region_tier: pricing.tier,
-        });
+        const { error: insertError } = await supabaseAdmin()
+          .from("payments")
+          .insert({
+            email,
+            razorpay_order_id: order.id,
+            amount,
+            currency: pricing.currency,
+            status: "created",
+            region_tier: pricing.tier,
+            product, // critical — webhook/verify keys off this to pick credit type
+          });
+        if (insertError) {
+          console.error(
+            `[payment/order] supabase insert failed for ${order.id}: ${insertError.message}`,
+          );
+        } else {
+          console.log(
+            `[payment/order] inserted payments row for ${order.id} (${product}, ${amount} ${pricing.currency})`,
+          );
+        }
       } catch (e) {
-        console.warn(`[payment/order] supabase insert failed: ${e instanceof Error ? e.message : e}`);
+        console.error(
+          `[payment/order] supabase threw for ${order.id}: ${e instanceof Error ? e.message : e}`,
+        );
       }
     }
 

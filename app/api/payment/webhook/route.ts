@@ -101,17 +101,25 @@ export async function POST(req: NextRequest) {
         })
         .eq("razorpay_order_id", orderId);
     }
-    if (email) {
-      // Grant credit. Idempotent against duplicate webhook deliveries because
-      // we early-returned above; idempotent across verify+webhook because
-      // the webhook secret event is fired exactly once per real capture.
-      if (product === "qa") {
-        await supabase.rpc("grant_qa_credits", { p_email: email, p_amount: 5 });
-      } else if (product === "download") {
-        // Download is a single-use signed token issued at verify time, not a
-        // persistent credit -- nothing to grant via webhook.
+    if (email && orderId) {
+      // Single idempotent RPC handles all three products. Safe to call
+      // multiple times — Razorpay emits payment.captured AND order.paid for
+      // every successful payment, and /api/payment/verify also calls this
+      // function. Only the first caller increments the credit; subsequent
+      // calls return 'already_disbursed' and short-circuit.
+      const { data, error } = await supabase.rpc("grant_credit_for_order", {
+        p_order_id: orderId,
+        p_email: email,
+        p_product: product,
+      });
+      if (error) {
+        console.error(
+          `[payment/webhook] grant failed for ${orderId}: ${error.message}`,
+        );
       } else {
-        await supabase.rpc("grant_paid_credits", { p_email: email, p_amount: 1 });
+        console.log(
+          `[payment/webhook] grant ${orderId} event=${eventType} product=${product} -> ${data}`,
+        );
       }
     }
   }

@@ -78,44 +78,46 @@ export async function POST(req: NextRequest) {
   if (product === "download") {
     // Issue a short-lived signed token bound to this email. The client uses
     // it to authenticate the immediate /api/download/pdf call. No DB row —
-    // the user pays, downloads, done.
+    // the user pays, downloads, done. (Idempotency call below still runs
+    // to mark the payment row as disbursed for accounting.)
+    if (isSupabaseConfigured()) {
+      await idempotentGrant(orderId, email, "download");
+    }
     const downloadToken = issueDownloadToken(email);
     return NextResponse.json({ ok: true, product: "download", downloadToken });
   }
 
-  if (product === "qa") {
-    // QA bundle — grant 5 paid Q&A credits. No token returned; the server
-    // decrements via consume_qa_credit on the next /api/qa call.
-    if (isSupabaseConfigured()) {
-      try {
-        const { error } = await supabaseAdmin().rpc("grant_qa_credits", {
-          p_email: email,
-          p_amount: 5,
-        });
-        if (error) {
-          console.error(`[payment/verify] grant_qa_credits failed: ${error.message}`);
-        }
-      } catch (e) {
-        console.error(`[payment/verify] qa supabase failed: ${e instanceof Error ? e.message : e}`);
-      }
-    }
-    return NextResponse.json({ ok: true, product: "qa" });
-  }
-
-  // Analysis credit — grant via Supabase RPC if available.
+  // analysis or qa — grant via the idempotent RPC so verify + webhook can't
+  // double-grant for the same order.
   if (isSupabaseConfigured()) {
-    try {
-      const { error } = await supabaseAdmin().rpc("grant_paid_credits", {
-        p_email: email,
-        p_amount: 1,
-      });
-      if (error) {
-        console.error(`[payment/verify] grant_paid_credits failed: ${error.message}`);
-      }
-    } catch (e) {
-      console.error(`[payment/verify] supabase failed: ${e instanceof Error ? e.message : e}`);
-    }
+    await idempotentGrant(orderId, email, product);
   }
+  return NextResponse.json({ ok: true, product });
+}
 
-  return NextResponse.json({ ok: true, product: "analysis" });
+async function idempotentGrant(
+  orderId: string,
+  email: string,
+  product: "analysis" | "download" | "qa",
+) {
+  try {
+    const { data, error } = await supabaseAdmin().rpc("grant_credit_for_order", {
+      p_order_id: orderId,
+      p_email: email,
+      p_product: product,
+    });
+    if (error) {
+      console.error(
+        `[payment/verify] grant_credit_for_order failed for ${orderId}: ${error.message}`,
+      );
+    } else {
+      console.log(
+        `[payment/verify] grant_credit_for_order ${orderId} (${product}) -> ${data}`,
+      );
+    }
+  } catch (e) {
+    console.error(
+      `[payment/verify] supabase failed: ${e instanceof Error ? e.message : e}`,
+    );
+  }
 }

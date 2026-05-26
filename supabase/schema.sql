@@ -89,6 +89,12 @@ create table if not exists payments (
 alter table payments add column if not exists product text not null default 'analysis'
   check (product in ('analysis', 'download', 'qa'));
 
+-- Atomic gate for credit disbursement. NULL until a credit (analysis or QA)
+-- has been granted for this Razorpay order. Used by grant_credit_for_order
+-- to deduplicate across the multiple sources that try to grant: webhook
+-- (payment.captured), webhook (order.paid), and /api/payment/verify.
+alter table payments add column if not exists credit_disbursed_at timestamptz;
+
 create index if not exists payments_email_idx       on payments (email);
 create index if not exists payments_status_idx      on payments (status);
 create index if not exists payments_created_at_idx  on payments (created_at desc);
@@ -319,6 +325,61 @@ begin
   else
     return 'none';
   end if;
+end;
+$$;
+
+-- Idempotent credit grant for a Razorpay order. Both /api/payment/verify and
+-- /api/payment/webhook (which itself fires for multiple events per payment:
+-- payment.authorized, payment.captured, order.paid) try to grant credit for
+-- the same order. Calling grant_paid_credits / grant_qa_credits directly from
+-- each caller results in 2-3x over-granting per payment.
+--
+-- This function atomically claims the grant via a conditional UPDATE on
+-- payments.credit_disbursed_at. The first caller wins the race; subsequent
+-- callers see row_count = 0 and short-circuit.
+--
+-- Returns one of:
+--   'granted'           — credit incremented for the given email + product
+--   'already_disbursed' — earlier caller already granted for this order
+--   'no_payment_row'    — order id not found (payments row not inserted yet,
+--                         or wrong order id) — caller should retry or log
+create or replace function grant_credit_for_order(
+  p_order_id text,
+  p_email text,
+  p_product text default 'analysis'  -- 'analysis' | 'qa' | 'download'
+)
+returns text
+language plpgsql
+security definer
+as $$
+declare
+  v_updated int;
+  v_exists  boolean;
+begin
+  -- Atomically claim the disbursement. Only the FIRST caller for this
+  -- order id sets credit_disbursed_at; everyone else gets row_count = 0.
+  update payments
+    set credit_disbursed_at = now()
+    where razorpay_order_id = p_order_id
+      and credit_disbursed_at is null;
+  get diagnostics v_updated = row_count;
+
+  if v_updated = 0 then
+    select exists(select 1 from payments where razorpay_order_id = p_order_id)
+      into v_exists;
+    return case when v_exists then 'already_disbursed' else 'no_payment_row' end;
+  end if;
+
+  -- Disbursement claimed by this caller — grant the right credit type.
+  -- 'download' is intentionally a no-op: the download token is issued by
+  -- the verify endpoint directly, there's no persistent credit to grant.
+  if p_product = 'qa' then
+    perform grant_qa_credits(p_email, 5);
+  elsif p_product = 'analysis' then
+    perform grant_paid_credits(p_email, 1);
+  end if;
+
+  return 'granted';
 end;
 $$;
 

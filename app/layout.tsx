@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import { Analytics } from "@vercel/analytics/next";
 import {
   META_DESCRIPTION,
   META_KEYWORDS,
@@ -79,6 +80,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-cream font-sans text-navy antialiased">
         {children}
         <GoogleAnalytics />
+        <Analytics />
       </body>
     </html>
   );

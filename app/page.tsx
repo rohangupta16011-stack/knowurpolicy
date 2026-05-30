@@ -94,8 +94,74 @@ function StructuredData({ pricing }: { pricing: PricingTier }) {
     })),
   };
 
+  // Organization entity for Google Knowledge Panel + LLM citation grounding.
+  // Per visibility cycle 1 / technical-schema agent output 2026-05-30.
+  const organization = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: SITE_NAME,
+    alternateName: "KnowUrPolicy — AI document analyser",
+    url: SITE_URL,
+    logo: `${SITE_URL}/icon.svg`,
+    description:
+      "KnowUrPolicy is an AI-powered document comprehension service that analyses any PDF policy, contract, lease, or NDA in about 30 seconds and returns a plain-English clause-by-clause breakdown with risk flags. Operated from India.",
+    foundingDate: "2026",
+    areaServed: "Worldwide",
+    knowsLanguage: ["en", "en-IN", "en-US", "en-GB"],
+    contactPoint: [
+      {
+        "@type": "ContactPoint",
+        contactType: "customer support",
+        url: `${SITE_URL}/contact`,
+        availableLanguage: ["English"],
+        areaServed: "Worldwide",
+      },
+      {
+        "@type": "ContactPoint",
+        contactType: "privacy",
+        url: `${SITE_URL}/contact`,
+        availableLanguage: ["English"],
+        areaServed: "Worldwide",
+      },
+    ],
+  };
+
+  // WebSite entity — enables Google sitelinks search box. potentialAction
+  // routes through the homepage as a search target until KUP ships a real
+  // /search route.
+  const website = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE_NAME,
+    url: SITE_URL,
+    description:
+      "AI document analyser — upload any policy, contract, lease, or NDA and get a plain-English breakdown in 30 seconds.",
+    inLanguage: "en",
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${SITE_URL}/?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organization) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(website) }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApp) }}

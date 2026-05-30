@@ -1,6 +1,9 @@
 import Footer from "@/components/Footer";
 import LegalDisclaimer from "@/components/LegalDisclaimer";
 import Nav from "@/components/Nav";
+import { SITE_URL } from "@/lib/site";
+
+type BreadcrumbItem = { name: string; path: string };
 
 // Shared chrome for static legal/info pages. Keeps /privacy, /terms, /contact
 // visually consistent with the landing page without re-implementing nav.
@@ -10,14 +13,39 @@ import Nav from "@/components/Nav";
 export default function LegalPageLayout({
   title,
   lastUpdated,
+  breadcrumb,
   children,
 }: {
   title: string;
   lastUpdated?: string;
+  /** Optional breadcrumb trail; emits BreadcrumbList JSON-LD when set.
+   *  First item is typically "Home" pointing at "/". Last item should be
+   *  the current page. Paths are relative to SITE_URL. */
+  breadcrumb?: BreadcrumbItem[];
   children: React.ReactNode;
 }) {
+  const breadcrumbSchema =
+    breadcrumb && breadcrumb.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: breadcrumb.map((item, i) => ({
+            "@type": "ListItem",
+            position: i + 1,
+            name: item.name,
+            item: `${SITE_URL}${item.path.startsWith("/") ? item.path : `/${item.path}`}`,
+          })),
+        }
+      : null;
+
   return (
     <>
+      {breadcrumbSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        />
+      )}
       <Nav />
       <main className="mx-auto max-w-2xl px-6 pb-32 pt-12">
         <header className="mb-10 border-b border-ink-12 pb-6">

@@ -14,6 +14,10 @@ export default function RefundsPage() {
     <LegalPageLayout
       title="Refund & Cancellation Policy"
       lastUpdated="May 24, 2026"
+      breadcrumb={[
+        { name: "Home", path: "/" },
+        { name: "Refund Policy", path: "/refunds" },
+      ]}
     >
       <Note>
         Short version: analyses and PDFs are digital goods delivered

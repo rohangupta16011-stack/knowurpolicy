@@ -11,7 +11,14 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <LegalPageLayout title="Terms of Service" lastUpdated="May 24, 2026">
+    <LegalPageLayout
+      title="Terms of Service"
+      lastUpdated="May 24, 2026"
+      breadcrumb={[
+        { name: "Home", path: "/" },
+        { name: "Terms of Service", path: "/terms" },
+      ]}
+    >
       <Note>
         Two-sentence version: KnowUrPolicy helps you understand what your
         documents say. <strong>It is not legal advice and not a substitute

@@ -36,15 +36,14 @@ export const metadata: Metadata = {
   category: "Productivity",
   alternates: {
     canonical: "/",
-    // hreflang per SEO audit — US primary, GB as alternate.
-    languages: {
-      "en-US": "/",
-      "en-GB": "/",
-    },
+    // hreflang is injected manually in <head> below — Next's metadata API
+    // emits the camelCase attribute `hrefLang` which Google's parser does
+    // not normalise, so the tags rendered but didn't count. Manual <link>
+    // elements guarantee lowercase attribute names.
   },
   openGraph: {
     type: "website",
-    locale: "en_US",
+    locale: "en_IN",
     url: SITE_URL,
     siteName: SITE_NAME,
     title: META_TITLE,
@@ -75,7 +74,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en-US" className={`${display.variable} ${body.variable}`}>
+    <html lang="en-IN" className={`${display.variable} ${body.variable}`}>
+      <head>
+        {/* Manual hreflang — Next's metadata.alternates.languages emits
+            camelCase `hrefLang` which Google's parser doesn't normalise.
+            Writing the tag in JSX with lowercase `hrefLang` (which React
+            then renders as lowercase `hreflang` in the DOM) is the simplest
+            fix. India-primary per the active wedge; `x-default` falls back
+            to the same canonical URL until per-locale routes exist. */}
+        <link rel="alternate" hrefLang="en-IN" href={`${SITE_URL}/`} />
+        <link rel="alternate" hrefLang="en" href={`${SITE_URL}/`} />
+        <link rel="alternate" hrefLang="x-default" href={`${SITE_URL}/`} />
+      </head>
       <body className="min-h-screen bg-cream font-sans text-navy antialiased">
         {children}
         <GoogleAnalytics />

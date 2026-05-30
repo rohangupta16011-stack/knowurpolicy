@@ -11,7 +11,14 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalPageLayout title="Privacy Policy" lastUpdated="May 24, 2026">
+    <LegalPageLayout
+      title="Privacy Policy"
+      lastUpdated="May 24, 2026"
+      breadcrumb={[
+        { name: "Home", path: "/" },
+        { name: "Privacy Policy", path: "/privacy" },
+      ]}
+    >
       <Note>
         Plain English version of what we do with your data. The short answer:{" "}
         <strong>almost nothing</strong> — your documents are analysed in memory

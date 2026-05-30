@@ -42,10 +42,10 @@ export const FAQS = [
 ];
 
 export const META_TITLE =
-  "KnowUrPolicy — AI Policy, Contract & Legal Document Analyser | Plain English in 30 Seconds";
+  "KnowUrPolicy — AI Rental Agreement & Contract Analyser for India (Free First Doc)";
 
 export const META_DESCRIPTION =
-  "Upload any policy, contract, or legal document and get a plain-English breakdown of what's covered, what's excluded, and what puts you at risk — in 30 seconds.";
+  "Upload your rental agreement, employment contract, insurance policy, or any legal PDF and get a plain-English clause-by-clause breakdown in 30 seconds. Free first doc; ₹99 each after. India-first.";
 
 export const META_KEYWORDS = [
   "AI contract analyser",

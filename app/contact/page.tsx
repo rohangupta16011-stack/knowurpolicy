@@ -12,7 +12,14 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <LegalPageLayout title="Contact" lastUpdated="May 24, 2026">
+    <LegalPageLayout
+      title="Contact"
+      lastUpdated="May 24, 2026"
+      breadcrumb={[
+        { name: "Home", path: "/" },
+        { name: "Contact", path: "/contact" },
+      ]}
+    >
       <p className="text-lg text-navy-mid">
         Fill in the form and we&apos;ll get back to you at the email you
         provide. We aim to reply within <strong>2 business days</strong>.

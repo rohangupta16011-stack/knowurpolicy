@@ -11,7 +11,14 @@ export const metadata: Metadata = {
 
 export default function DeliveryPage() {
   return (
-    <LegalPageLayout title="Delivery Policy" lastUpdated="May 24, 2026">
+    <LegalPageLayout
+      title="Delivery Policy"
+      lastUpdated="May 24, 2026"
+      breadcrumb={[
+        { name: "Home", path: "/" },
+        { name: "Delivery Policy", path: "/delivery" },
+      ]}
+    >
       <Note>
         Short version: KnowUrPolicy sells <strong>digital goods only</strong>.
         There is no physical shipment. Analyses appear in your browser within

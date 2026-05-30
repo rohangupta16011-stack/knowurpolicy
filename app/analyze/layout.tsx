@@ -8,9 +8,9 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   // String here is composed via the root layout's title template
   // (`%s — KnowUrPolicy`), so just provide the page-specific portion.
-  title: "Upload Your Document",
+  title: "Upload a Rental Agreement, Contract or Policy",
   description:
-    "Drag and drop your policy, contract, or legal document. Get a plain-English breakdown in 30 seconds. Free, private, no account needed.",
+    "Sign in with Google, upload your PDF, and get a plain-English clause-by-clause breakdown in 30 seconds. First analysis free; ₹99 each after.",
   alternates: { canonical: "/analyze" },
 };
 

@@ -78,13 +78,14 @@ export default function RootLayout({
       <head>
         {/* Manual hreflang — Next's metadata.alternates.languages emits
             camelCase `hrefLang` which Google's parser doesn't normalise.
-            Writing the tag in JSX with lowercase `hrefLang` (which React
-            then renders as lowercase `hreflang` in the DOM) is the simplest
-            fix. India-primary per the active wedge; `x-default` falls back
-            to the same canonical URL until per-locale routes exist. */}
-        <link rel="alternate" hrefLang="en-IN" href={`${SITE_URL}/`} />
-        <link rel="alternate" hrefLang="en" href={`${SITE_URL}/`} />
-        <link rel="alternate" hrefLang="x-default" href={`${SITE_URL}/`} />
+            Writing the JSX prop as `hrefLang` ALSO emits camelCase in the
+            rendered HTML (verified via curl after the first attempt at
+            this fix). The spread-prop trick below bypasses React's
+            known-attribute table and preserves the literal key, so the
+            attribute renders as lowercase `hreflang` in the DOM. */}
+        <link rel="alternate" {...{ hreflang: "en-IN" }} href={`${SITE_URL}/`} />
+        <link rel="alternate" {...{ hreflang: "en" }} href={`${SITE_URL}/`} />
+        <link rel="alternate" {...{ hreflang: "x-default" }} href={`${SITE_URL}/`} />
       </head>
       <body className="min-h-screen bg-cream font-sans text-navy antialiased">
         {children}
